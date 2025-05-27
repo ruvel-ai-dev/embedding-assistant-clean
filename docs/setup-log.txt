@@ -1,0 +1,9 @@
+# SETUP LOG – Embedding Assistant Project
+
+Date: 2025-05-27
+
+Tasks completed:
+- Created Replit project: embedding-assistant-prototype
+- Set up folders: docs/ and resources/
+- Verified new Replit interface layout
+- Began tracking project progress

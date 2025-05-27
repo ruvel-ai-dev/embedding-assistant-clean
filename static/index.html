@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Embedding Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        #response {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ask the Embedding Assistant</h1>
+    <input type="text" id="question" placeholder="Type your question here" style="width: 300px;">
+    <button onclick="askGPT()">Send</button>
+    <div id="response"></div>
+
+    <script>
+        async function askGPT() {
+            const question = document.getElementById("question").value;
+
+            const response = await fetch("/ask", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message: question })
+            });
+
+            const data = await response.json();
+            document.getElementById("response").innerText = data.reply;
+        }
+    </script>
+</body>
+</html>
