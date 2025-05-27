@@ -1,35 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Embedding Assistant</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 40px;
         }
+        label, input, select, textarea, button {
+            display: block;
+            margin-top: 15px;
+            width: 100%;
+            max-width: 600px;
+        }
+        textarea {
+            height: 150px;
+            resize: vertical;
+        }
         #response {
-            margin-top: 20px;
+            margin-top: 25px;
             font-weight: bold;
             color: #333;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
     <h1>Ask the Embedding Assistant</h1>
-    <input type="text" id="question" placeholder="Type your question here" style="width: 300px;">
-    <button onclick="askGPT()">Send</button>
+
+    <label for="subject">Subject Area:</label>
+    <input type="text" id="subject" placeholder="e.g. Law, Engineering, Sociology">
+
+    <label for="level">Academic Level:</label>
+    <select id="level">
+        <option value="">Select Level</option>
+        <option value="Foundation">Foundation</option>
+        <option value="Undergraduate">Undergraduate (Bachelor’s)</option>
+        <option value="Postgraduate">Postgraduate (Master’s/PhD)</option>
+    </select>
+
+    <label for="module">Module Title:</label>
+    <input type="text" id="module" placeholder="e.g. AI Ethics in Practice">
+
+    <label for="notes">Additional Notes:</label>
+    <textarea id="notes" placeholder="e.g. I want this assistant to provide case studies, career resources, and downloadable guides relevant to this module."></textarea>
+
+    <button onclick="askAssistant()">Ask the Assistant</button>
+
     <div id="response"></div>
 
     <script>
-        async function askGPT() {
-            const question = document.getElementById("question").value;
+        async function askAssistant() {
+            const subject = document.getElementById("subject").value;
+            const level = document.getElementById("level").value;
+            const module = document.getElementById("module").value;
+            const notes = document.getElementById("notes").value;
+
+            const fullPrompt = 
+                `Subject Area: ${subject}\n` +
+                `Academic Level: ${level}\n` +
+                `Module Title: ${module}\n` +
+                `Additional Notes: ${notes}`;
 
             const response = await fetch("/ask", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ message: question })
+                body: JSON.stringify({ message: fullPrompt })
             });
 
             const data = await response.json();
@@ -38,3 +77,7 @@
     </script>
 </body>
 </html>
+
+
+
+
