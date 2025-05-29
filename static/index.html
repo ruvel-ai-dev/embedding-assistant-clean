@@ -49,6 +49,7 @@
     <button onclick="askAssistant()">Ask the Assistant</button>
 
     <div id="response"></div>
+    <div id="downloads"></div>
 
     <script>
         async function askAssistant() {
@@ -57,7 +58,7 @@
             const module = document.getElementById("module").value;
             const notes = document.getElementById("notes").value;
 
-            const fullPrompt = 
+            const fullPrompt =
                 `Subject Area: ${subject}\n` +
                 `Academic Level: ${level}\n` +
                 `Module Title: ${module}\n` +
@@ -73,11 +74,23 @@
 
             const data = await response.json();
             document.getElementById("response").innerText = data.reply;
+
+            const downloads = document.getElementById("downloads");
+            downloads.innerHTML = "";
+            if (data.resources && data.resources.length > 0) {
+                const list = document.createElement("ul");
+                data.resources.forEach(file => {
+                    const item = document.createElement("li");
+                    const link = document.createElement("a");
+                    link.href = file.url;
+                    link.innerText = file.name;
+                    link.target = "_blank";
+                    item.appendChild(link);
+                    list.appendChild(item);
+                });
+                downloads.appendChild(list);
+            }
         }
     </script>
 </body>
 </html>
-
-
-
-

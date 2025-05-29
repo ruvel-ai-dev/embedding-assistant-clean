@@ -1,45 +1,51 @@
-# Embedding Assistant – AI Careers Resource Helper
+# Embedding Assistant – Careers Resource Recommender (Prototype)
 
-This is an AI-powered web application built using Flask and OpenAI’s GPT-3.5.  
-It was developed as part of a practical learning project by a complete beginner, using step-by-step training, to explore real-world applications of generative AI for higher education.
+This is a working prototype AI assistant built to help university lecturers access careers materials tailored to their **module, academic level, and subject**.
 
-It allows lecturers at the University of Greenwich to request employability-related materials based on their subject/module needs and receive downloadable resources like PDFs, Word documents, and PowerPoints.
+## Purpose
+Lecturers often struggle to find the right employability resources for their course. This assistant streamlines that process.
 
----
+- Advisors (not lecturers) maintain the central resource bank (PDFs, Word, PPTs, links).
+- Lecturers submit queries via a simple form.
+- The assistant recommends downloadable resources instantly, based on subject, level, and module content.
 
-## Project Purpose
+## Powered By
+- Python (Flask) – for backend
+- HTML/CSS/JavaScript – for frontend
+- OpenAI GPT API – for natural language understanding
+- Hosted on Replit
+- Resources stored in `static/` folder
 
-- Help university lecturers embed employability content into course design.
-- Provide a user-friendly web interface powered by OpenAI's GPT model.
-- Demonstrate beginner-level skills in AI, backend, and frontend integration.
-- Build a public GitHub portfolio for showcasing project-based learning.
+## Current Demo Resources
+These are example materials embedded for demonstration:
 
----
+- [CV Template (Word)](/static/cv-template.docx)
+- [Cover Letter Guide (Word)](/static/cover-letter.docx)
+- [Employability Checklist (PDF)](/static/employability-checklist.pdf)
 
-## Features
+> All resources live in the `static/` directory and are hard-linked from within responses.
 
-- Flask-powered web server
-- HTML frontend with form input
-- Calls OpenAI API securely (via API key)
-- Dynamic responses based on user questions
-- Future support: downloadable careers resources (PDFs, Word docs, etc.)
-- Designed to plug into existing university systems (Moodle, OneDrive, Azure)
+## How It Works
+1. User fills in form:
+   - Subject Area
+   - Academic Level (Foundation, Undergraduate, Postgraduate)
+   - Module Title
+   - Additional Notes
 
----
+2. Assistant sends prompt to GPT API
 
-## Tech Stack
+3. GPT returns relevant guidance + links to resources (pre-uploaded in `static/`)
 
-- **Python** (Flask web framework)
-- **HTML + JS** frontend
-- **OpenAI GPT-3.5**
-- **Replit** (development environment)
-- **GitHub** (version control and public portfolio)
+## Notes
+- Lecturers **do not upload** anything.
+- Advisors update the `static/` folder or future OneDrive/Moodle integration.
 
----
+## Future Roadmap
+- OneDrive integration to host live documents (for internal staff use).
+- Admin interface for advisors to add/remove resource links.
+- Streamlit version for advanced visualisation.
+- Embedding-based semantic search instead of keyword-based matching.
 
-## How To Run (Locally or Replit)
+## 👨‍💼 Author
+Developed by [Ruvel AI Dev](https://github.com/ruvel-ai-dev) for University of Greenwich careers support integration.
 
-1. Clone the repository  
-2. Create a file/environment variable:  
-   `OPENAI_API_KEY=your_key_here`
-3. Run the app:
