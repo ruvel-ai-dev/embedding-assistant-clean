@@ -19,9 +19,9 @@ Lecturers often struggle to find the right employability resources for their cou
 ## Current Demo Resources
 These are example materials embedded for demonstration:
 
-- [CV Template (Word)](/static/cv-template.docx)
+- [CV Template (Word)](/static/cv-template.pptx)
 - [Cover Letter Guide (Word)](/static/cover-letter.docx)
-- [Employability Checklist (PDF)](/static/employability-checklist.pdf)
+- [Employability Checklist (PDF)](/static/checklist.pdf)
 
 > All resources live in the `static/` directory and are hard-linked from within responses.
 
