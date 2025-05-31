@@ -1,0 +1,20 @@
+[
+  {
+    "title": "LinkedIn Masterclass",
+    "description": "Step-by-step guide to optimise LinkedIn profiles.",
+    "keywords": ["linkedin", "networking", "profile"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/linkedin-masterclass"
+  },
+  {
+    "title": "AI in Business Careers",
+    "description": "Explore analytics and AI roles in modern business.",
+    "keywords": ["ai", "analytics", "business"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/ai-business"
+  },
+  {
+    "title": "Academic Writing & Referencing",
+    "description": "Harvard referencing, critical writing, plagiarism.",
+    "keywords": ["writing", "referencing", "harvard", "plagiarism"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/academic-writing"
+  }
+]

@@ -5,6 +5,8 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 requires-python = ">=3.11"
 dependencies = [
+    "beautifulsoup4>=4.13.4",
     "flask>=3.1.1",
     "openai>=1.82.0",
+    "requests>=2.32.3",
 ]

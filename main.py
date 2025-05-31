@@ -1,26 +1,73 @@
 import os
+import json
 from flask import Flask, request, jsonify
 from openai import OpenAI
 
 app = Flask(__name__, static_folder="static")
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# ✅ Resource links for file suggestions
+# ─────────────────────────────────────
+# Persona / system prompt
+SYSTEM_PERSONA = """
+You are the “Greenwich Employability Embedding Assistant”, an employability adviser for the
+Employability & Apprenticeship Directorate at the University of Greenwich (UK) with extensive experience.
+Audience: academic staff (lecturers, module leaders, tutors) who want to embed
+employability skills and resources into their curriculum.
+
+Speaking style:
+• British English/ UK spelling only and academic-friendly tone.
+• professional and wholly relevant with specifics.
+concise and clear.
+
+Never mention internal implementation details (e.g., JSON, code).
+"""
+
+# ─────────────────────────────────────
+# 1) Static downloadable resources
 resources = {
     "cv": [{
         "name": "CV Template",
-        "url": "/static/cv-template.pptx"
+        "url": "/static/cv-template.pptx",
+        "kind": "file"
     }, {
         "name": "Employability Checklist",
-        "url": "/static/checklist.pdf"
+        "url": "/static/checklist.pdf",
+        "kind": "file"
     }],
     "cover letter": [{
         "name": "Cover Letter Template",
-        "url": "/static/cover-letter.docx"
+        "url": "/static/cover-letter.docx",
+        "kind": "file"
     }]
 }
 
+# ─────────────────────────────────────
+# 2) Load pathways.json safely
+try:
+    with open("pathways.json", "r", encoding="utf-8") as f:
+        PATHWAYS = json.load(f)
+except Exception as e:
+    print("⚠️  Pathways JSON error →", e)
+    PATHWAYS = []
 
+
+def find_matching_pathways(query: str, limit: int = 5):
+    q = query.lower()
+    matches = []
+    for p in PATHWAYS:
+        if any(kw in q for kw in p.get("keywords", [])):
+            matches.append({
+                "name": p["title"],
+                "url": p["url"],
+                "info": p.get("description", ""),
+                "kind": "pathway"
+            })
+        if len(matches) >= limit:
+            break
+    return matches
+
+
+# ─────────────────────────────────────
 @app.route("/")
 def index():
     return app.send_static_file("index.html")
@@ -29,26 +76,34 @@ def index():
 @app.route("/ask", methods=["POST"])
 def ask_gpt():
     data = request.get_json()
-    user_message = data.get("message")
+    user_message = data.get("message", "")
 
-    response = client.chat.completions.create(model="gpt-3.5-turbo",
+    # 1. ChatGPT with persona
+    gpt_resp = client.chat.completions.create(model="gpt-3.5-turbo",
                                               messages=[{
+                                                  "role":
+                                                  "system",
+                                                  "content":
+                                                  SYSTEM_PERSONA
+                                              }, {
                                                   "role": "user",
                                                   "content": user_message
                                               }])
+    answer = gpt_resp.choices[0].message.content
 
-    answer = response.choices[0].message.content
-
-    # ✅ Match keywords to file suggestions
+    # 2. Static file matches
     matched = []
-    for keyword, files in resources.items():
-        if keyword in user_message.lower():
+    for kw, files in resources.items():
+        if kw in user_message.lower():
             matched.extend(files)
+
+    # 3. Pathway matches
+    matched.extend(find_matching_pathways(user_message))
 
     return jsonify({"reply": answer, "resources": matched})
 
 
-@app.route('/static/<path:filename>')
+@app.route("/static/<path:filename>")
 def static_files(filename):
     return app.send_static_file(filename)
 
