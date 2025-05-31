@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Embedding Assistant</title>
 
-  <!-- Bootstrap for clean styling -->
+  <!-- Bootstrap for nicer styles -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -43,13 +43,12 @@
 
   <script>
     async function askAssistant() {
-      // Gather input
+      // Gather form values
       const subject = document.getElementById("subject").value;
       const level   = document.getElementById("level").value;
       const module  = document.getElementById("module").value;
       const notes   = document.getElementById("notes").value;
 
-      // Build prompt
       const prompt =
         `Subject Area: ${subject}\n` +
         `Academic Level: ${level}\n` +
@@ -64,15 +63,16 @@
       });
       const data = await res.json();
 
-      // Display GPT answer
+      // Show GPT reply
       document.getElementById("response").innerText = data.reply;
 
-      // Split resources by kind
+      // Split resources by type
       const downloads = document.getElementById("downloads");
       downloads.innerHTML = "";
       const files    = data.resources.filter(r => r.kind === "file");
       const pathways = data.resources.filter(r => r.kind === "pathway");
 
+      // Render Downloadable Documents (blue)
       if (files.length) {
         const h = document.createElement("h5");
         h.innerText = "Downloadable Documents";
@@ -80,11 +80,11 @@
 
         const ul = document.createElement("ul");
         files.forEach(f => {
-          const li   = document.createElement("li");
+          const li = document.createElement("li");
           const link = document.createElement("a");
           link.href = f.url;
-          link.className = "btn btn-outline-primary btn-sm me-2";
           link.target = "_blank";
+          link.className = "btn btn-outline-primary btn-sm me-2";
           link.innerText = f.name;
           li.appendChild(link);
           ul.appendChild(li);
@@ -92,6 +92,7 @@
         downloads.appendChild(ul);
       }
 
+      // Render Pathways (green)
       if (pathways.length) {
         const h = document.createElement("h5");
         h.innerText = "Recommended Pathways";
@@ -99,11 +100,11 @@
 
         const ul = document.createElement("ul");
         pathways.forEach(p => {
-          const li   = document.createElement("li");
+          const li = document.createElement("li");
           const link = document.createElement("a");
           link.href = p.url;
-          link.className = "btn btn-outline-success btn-sm me-2";
           link.target = "_blank";
+          link.className = "btn btn-outline-success btn-sm me-2";
           link.innerText = p.name;
           li.appendChild(link);
           if (p.info) {
@@ -119,6 +120,3 @@
   </script>
 </body>
 </html>
-
-
-
