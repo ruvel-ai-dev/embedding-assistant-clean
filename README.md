@@ -79,6 +79,6 @@ These are presented in three sections on the web page.
 
 ## Author
 
-This prototype was developed by Ruvel AI Dev in collaboration with the University of Greenwich Careers and Employability Service, to improve the embedding of employability across the curriculum.
+This prototype was developed by Ruvel AI Dev in collaboration with the University of Greenwich Careers and Employability Service, to improve the embedding of employability across the curriculum. 
 
 
