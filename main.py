@@ -1,4 +1,8 @@
-import os, json
+# Updated Flask app with Gunicorn compatibility
+# Filename: main.py
+
+import os
+import json
 from flask import Flask, request, jsonify
 from openai import OpenAI
 
@@ -89,8 +93,9 @@ def ask_gpt():
 def static_files(filename):
     return app.send_static_file(filename)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
+# ⚠️ No `if __name__ == "__main__"` block is needed now.
+# Gunicorn will run the app using: `gunicorn main:app`
+
     
     
 
