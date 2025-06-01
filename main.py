@@ -93,6 +93,10 @@ def ask_gpt():
 def static_files(filename):
     return app.send_static_file(filename)
 
+@app.errorhandler(404)
+def not_found(e):
+    return app.send_static_file("index.html")
+
 # ⚠️ No `if __name__ == "__main__"` block is needed now.
 # Gunicorn will run the app using: `gunicorn main:app`
 
