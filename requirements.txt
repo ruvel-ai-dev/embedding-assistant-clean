@@ -1,3 +1,4 @@
+
 flask
 openai
 python-dotenv
@@ -6,6 +7,3 @@ azure-storage-blob
 python-docx
 python-pptx
 PyMuPDF
-pymupdf
-docx
-fitz
