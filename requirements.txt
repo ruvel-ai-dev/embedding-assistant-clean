@@ -7,3 +7,5 @@ azure-storage-blob
 python-docx
 python-pptx
 PyMuPDF
+docx
+fitz
