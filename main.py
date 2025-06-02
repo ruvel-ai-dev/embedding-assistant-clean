@@ -1,31 +1,18 @@
-# Filename: main.py
-# Flask app with Replit + Azure Blob + GPT integration
-
+# main.py – Flask app with Azure file reading (PDF fix applied)
 import os
 import json
+from io import BytesIO
 from flask import Flask, request, jsonify
 from openai import OpenAI
 from azure.storage.blob import BlobServiceClient
+import fitz  # PyMuPDF
+import docx  # python-docx
+from pptx import Presentation  # python-pptx
 
-# ── Flask + OpenAI setup ────────────────────────────────────────────
 app = Flask(__name__, static_folder="static")
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# ── Azure Blob Storage setup ────────────────────────────────────────
-AZURE_STORAGE_CONNECTION_STRING = os.environ.get(
-    "AZURE_STORAGE_CONNECTION_STRING")
-AZURE_CONTAINER_NAME = "resources"
-
-try:
-    blob_service_client = BlobServiceClient.from_connection_string(
-        AZURE_STORAGE_CONNECTION_STRING)
-    container_client = blob_service_client.get_container_client(
-        AZURE_CONTAINER_NAME)
-except Exception as e:
-    print("⚠️ Azure Blob error →", e)
-    container_client = None
-
-# ── Persona prompt ──────────────────────────────────────────────────
+# ── System prompt ──
 SYSTEM_PERSONA = """
 You are the “Greenwich Employability Embedding Assistant”, an employability adviser for the
 Employability & Apprenticeship Directorate at the University of Greenwich (UK) with extensive experience.
@@ -40,38 +27,25 @@ Speaking style:
 Never mention internal implementation details (e.g., JSON, code).
 """
 
+# ── Static fallback files (used if Azure fails) ──
+resources = {
+    "cv": [{
+        "name": "CV Template",
+        "url": "/static/cv-template.pptx",
+        "kind": "file"
+    }, {
+        "name": "Employability Checklist",
+        "url": "/static/checklist.pdf",
+        "kind": "file"
+    }],
+    "cover letter": [{
+        "name": "Cover Letter Template",
+        "url": "/static/cover-letter.docx",
+        "kind": "file"
+    }]
+}
 
-# ── Helper: fetch matching files from Azure ─────────────────────────
-def get_blob_resources(user_query):
-    if not container_client:
-        return []
-
-    keywords = [
-        "cv", "cover letter", "checklist", "template", "guide", "interview",
-        "employability"
-    ]
-    query_lower = user_query.lower()
-
-    try:
-        blobs = container_client.list_blobs()
-        matches = []
-
-        for blob in blobs:
-            blob_name = blob.name.lower()
-            if any(kw in query_lower or kw in blob_name for kw in keywords):
-                matches.append({
-                    "name": blob.name,
-                    "url":
-                    f"https://{blob_service_client.account_name}.blob.core.windows.net/{AZURE_CONTAINER_NAME}/{blob.name}",
-                    "kind": "file"
-                })
-        return matches
-    except Exception as e:
-        print("⚠️ Error listing blobs →", e)
-        return []
-
-
-# ── Load pathways.json (if available) ───────────────────────────────
+# ── Load pathways.json ──
 try:
     with open("pathways.json", "r", encoding="utf-8") as f:
         PATHWAYS = json.load(f)
@@ -96,7 +70,44 @@ def find_matching_pathways(query: str, limit: int = 5):
     return matches
 
 
-# ── Routes ──────────────────────────────────────────────────────────
+# ── Azure Blob text reader ──
+def download_blob_text(filename):
+    try:
+        conn_str = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
+        blob_service = BlobServiceClient.from_connection_string(conn_str)
+        container = blob_service.get_container_client("resources")
+        blob = container.get_blob_client(filename)
+        stream = BytesIO(blob.download_blob().readall())
+
+        if filename.endswith(".pdf"):
+            text = ""
+            with fitz.open(stream=stream, filetype="pdf") as pdf:
+                for page in pdf:
+                    text += page.get_text()
+            return text
+
+        elif filename.endswith(".docx"):
+            doc = docx.Document(stream)
+            return "\n".join(
+                [p.text for p in doc.paragraphs if p.text.strip()])
+
+        elif filename.endswith(".pptx"):
+            prs = Presentation(stream)
+            text = ""
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if hasattr(shape, "text"):
+                        text += shape.text + "\n"
+            return text
+
+        else:
+            return "⚠️ Unsupported file type."
+
+    except Exception as e:
+        return f"❌ Error reading file: {e}"
+
+
+# ── Flask routes ──
 @app.route("/")
 def index():
     return app.send_static_file("index.html")
@@ -107,7 +118,6 @@ def ask_gpt():
     data = request.get_json()
     user_message = data.get("message", "")
 
-    # GPT response
     gpt_resp = client.chat.completions.create(model="gpt-3.5-turbo",
                                               messages=[{
                                                   "role":
@@ -120,17 +130,25 @@ def ask_gpt():
                                               }])
     answer = gpt_resp.choices[0].message.content
 
-    # Find resources and pathways
-    matched_files = get_blob_resources(user_message)
-    matched_pathways = find_matching_pathways(user_message)
+    matched = []
+    for kw, files in resources.items():
+        if kw in user_message.lower():
+            matched.extend(files)
 
-    return jsonify({
-        "reply": answer,
-        "resources": matched_files + matched_pathways
-    })
+    matched.extend(find_matching_pathways(user_message))
+
+    return jsonify({"reply": answer, "resources": matched})
 
 
-# Static file serving (if needed)
+@app.route("/read-file")
+def read_file():
+    filename = request.args.get("name")
+    if not filename:
+        return "⚠️ Please provide a filename using ?name=FILENAME"
+    content = download_blob_text(filename)
+    return f"<pre>{content}</pre>"
+
+
 @app.route("/static/<path:filename>")
 def static_files(filename):
     return app.send_static_file(filename)
@@ -141,20 +159,6 @@ def not_found(e):
     return app.send_static_file("index.html")
 
 
-# Optional route for testing Azure connection
-@app.route("/test-azure")
-def test_azure():
-    if not container_client:
-        return jsonify({"error": "Azure connection failed."}), 500
-    try:
-        blobs = container_client.list_blobs()
-        file_names = [blob.name for blob in blobs]
-        return jsonify({"files": file_names})
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-
-# ── Replit-compatible server start ──────────────────────────────────
+# ── Local dev server for Replit ─────────────────────────────────────
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 3000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=5000)
