@@ -1,78 +1,68 @@
 import os
-import json
-from io import BytesIO
-from azure.storage.blob import BlobServiceClient
-
 import fitz  # PyMuPDF
 import docx
-from pptx import Presentation
-
+import pptx
+from azure.storage.blob import BlobServiceClient
+from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
-from langchain.docstore.document import Document
 
+# Load environment variables
 from dotenv import load_dotenv
 load_dotenv()
 
-# ── Connect to Azure Blob ──
-connection_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+# Connect to Azure Blob Storage
+connection_string = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
 container_name = "resources"
-blob_service = BlobServiceClient.from_connection_string(connection_str)
-container_client = blob_service.get_container_client(container_name)
+blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+container_client = blob_service_client.get_container_client(container_name)
 
-# ── Load and parse supported files ──
-docs = []
+# Download all blobs from Azure storage
+download_dir = "./downloads"
+os.makedirs(download_dir, exist_ok=True)
 
+documents = []
 for blob in container_client.list_blobs():
-    filename = blob.name
+    blob_name = blob.name
+    download_path = os.path.join(download_dir, blob_name)
+    with open(download_path, "wb") as f:
+        blob_client = container_client.get_blob_client(blob)
+        f.write(blob_client.download_blob().readall())
+    print(f"✅ Downloaded: {blob_name}")
+
+    ext = blob_name.lower().split(".")[-1]
     try:
-        stream = container_client.get_blob_client(blob).download_blob().readall()
-        text = ""
-
-        if filename.endswith(".pdf"):
-            with fitz.open(stream=BytesIO(stream), filetype="pdf") as pdf:
-                for page in pdf:
-                    text += page.get_text()
-
-        elif filename.endswith(".docx"):
-            doc = docx.Document(BytesIO(stream))
-            text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
-
-        elif filename.endswith(".pptx"):
-            prs = Presentation(BytesIO(stream))
-            for slide in prs.slides:
-                for shape in slide.shapes:
-                    if hasattr(shape, "text"):
-                        text += shape.text + "\n"
-
+        if ext == "pdf":
+            with fitz.open(download_path) as doc:
+                text = "\n".join([page.get_text() for page in doc])
+        elif ext == "docx":
+            text = "\n".join([p.text for p in docx.Document(download_path).paragraphs])
+        elif ext == "pptx":
+            prs = pptx.Presentation(download_path)
+            text = "\n".join([shape.text for slide in prs.slides for shape in slide.shapes if hasattr(shape, "text")])
+        elif ext == "txt":
+            with open(download_path, "r", encoding="utf-8") as f:
+                text = f.read()
         else:
-            print(f"⚠️ Skipping unsupported file: {filename}")
+            print(f"⚠️ Unsupported file format: {blob_name}")
             continue
 
-        docs.append(Document(page_content=text, metadata={"source": filename}))
-        print(f"✅ Processed: {filename}")
-
+        documents.append({"text": text, "source": blob_name})
+        print(f"✅ Processed: {blob_name}")
     except Exception as e:
-        print(f"❌ Failed to process {filename} → {e}")
+        print(f"❌ Error reading {blob_name}: {e}")
 
-# ── Optionally include pathways.json ──
-try:
-    with open("pathways.json", "r", encoding="utf-8") as f:
-        pathway_data = json.load(f)
-    for entry in pathway_data:
-        content = f"{entry['title']}\n{entry['description']}\n{entry['url']}"
-        docs.append(Document(page_content=content, metadata={"source": "pathways.json"}))
-    print("✅ Pathways added to document list")
-except Exception as e:
-    print(f"⚠️ Could not read pathways.json → {e}")
+# Convert to LangChain documents
+from langchain.schema import Document
+docs = [Document(page_content=doc["text"], metadata={"source": doc["source"]}) for doc in documents]
 
-# ── Split and embed ──
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
+# Split and embed
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
 split_docs = text_splitter.split_documents(docs)
 
 embedding = OpenAIEmbeddings()
-vectorstore = FAISS.from_documents(split_docs, embedding)
-
-vectorstore.save_local("faiss_index")
+db = FAISS.from_documents(split_docs, embedding)
+db.save_local("faiss_index")
 print("✅ FAISS index built and saved")
+

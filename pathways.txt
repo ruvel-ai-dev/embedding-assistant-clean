@@ -1,0 +1,15 @@
+Title: LinkedIn Masterclass
+Description: Step-by-step guide to optimise LinkedIn profiles.
+Keywords: linkedin, networking, profile
+URL: https://targetconnect.gre.ac.uk/pathways/linkedin-masterclass
+----------------------------------------
+Title: AI in Business Careers
+Description: Explore analytics and AI roles in modern business.
+Keywords: ai, analytics, business
+URL: https://targetconnect.gre.ac.uk/pathways/ai-business
+----------------------------------------
+Title: Academic Writing & Referencing
+Description: Harvard referencing, critical writing, plagiarism.
+Keywords: writing, referencing, harvard, plagiarism
+URL: https://targetconnect.gre.ac.uk/pathways/academic-writing
+----------------------------------------

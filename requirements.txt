@@ -1,8 +1,22 @@
-azure-storage-blob
-python-docx
-python-pptx
-PyMuPDF
+# Core dependencies
+flask
+python-dotenv
+openai
+
+# LangChain and vector embedding
 langchain
 langchain-community
 langchain-openai
 
+# Azure Blob Storage
+azure-storage-blob
+
+# Document reading
+python-docx
+python-pptx
+PyMuPDF
+
+# Optional (for running locally on Replit etc.)
+tiktoken
+docx
+fitz
