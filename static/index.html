@@ -8,6 +8,15 @@
     body { max-width: 820px; margin: 40px auto; font-family: Arial, sans-serif; }
     #response { white-space: pre-wrap; margin-top: 25px; font-weight: 500; }
     #error { color: red; margin-top: 15px; }
+    .downloads a, .pathways a {
+      display: block;
+      margin: 4px 0;
+      text-decoration: none;
+    }
+    .pathways p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
@@ -34,13 +43,15 @@
 
   <div id="error"></div>
   <div id="response" class="mt-4"></div>
-  <div id="downloads" class="mt-3"></div>
+  <div id="downloads" class="mt-4"></div>
+  <div id="pathways" class="mt-4"></div>
 
   <script>
     async function askAssistant() {
       document.getElementById("error").innerText = "";
       document.getElementById("response").innerText = "";
       document.getElementById("downloads").innerHTML = "";
+      document.getElementById("pathways").innerHTML = "";
 
       const subject = document.getElementById("subject").value;
       const level   = document.getElementById("level").value;
@@ -67,52 +78,39 @@
         const data = await res.json();
         document.getElementById("response").innerText = data.reply;
 
-        const downloads = document.getElementById("downloads");
-        const files = data.resources.filter(r => r.kind === "file");
-        const pathways = data.resources.filter(r => r.kind === "pathway");
-
-        if (files.length) {
+        // DOWNLOADS
+        if (data.downloads && data.downloads.length > 0) {
+          const dWrap = document.getElementById("downloads");
           const h = document.createElement("h5");
           h.innerText = "Downloadable Documents";
-          downloads.appendChild(h);
-
-          const ul = document.createElement("ul");
-          files.forEach(f => {
-            const li = document.createElement("li");
+          dWrap.appendChild(h);
+          data.downloads.forEach(file => {
             const link = document.createElement("a");
-            link.href = f.url;
+            link.href = file.url;
+            link.innerText = "📄 " + file.name;
             link.target = "_blank";
-            link.className = "btn btn-outline-primary btn-sm me-2";
-            link.innerText = f.name;
-            li.appendChild(link);
-            ul.appendChild(li);
+            dWrap.appendChild(link);
           });
-          downloads.appendChild(ul);
         }
 
-        if (pathways.length) {
+        // PATHWAYS
+        if (data.pathways && data.pathways.length > 0) {
+          const pWrap = document.getElementById("pathways");
           const h = document.createElement("h5");
           h.innerText = "Recommended Pathways";
-          downloads.appendChild(h);
-
-          const ul = document.createElement("ul");
-          pathways.forEach(p => {
-            const li = document.createElement("li");
+          pWrap.appendChild(h);
+          data.pathways.forEach(p => {
             const link = document.createElement("a");
             link.href = p.url;
+            link.innerText = "🔗 " + p.title;
             link.target = "_blank";
-            link.className = "btn btn-outline-success btn-sm me-2";
-            link.innerText = p.name;
-            li.appendChild(link);
-            if (p.info) {
-              const small = document.createElement("small");
-              small.innerText = " — " + p.info;
-              li.appendChild(small);
-            }
-            ul.appendChild(li);
+            const desc = document.createElement("p");
+            desc.innerText = p.description;
+            pWrap.appendChild(link);
+            pWrap.appendChild(desc);
           });
-          downloads.appendChild(ul);
         }
+
       } catch (err) {
         console.error("❌ Error:", err);
         document.getElementById("error").innerText = "Something went wrong. Please try again later.";
@@ -121,5 +119,6 @@
   </script>
 </body>
 </html>
+
 
 

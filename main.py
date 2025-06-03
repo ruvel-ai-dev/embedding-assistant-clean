@@ -14,15 +14,11 @@ load_dotenv()
 app = Flask(__name__, static_folder="static")
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
+# ── Settings ──
+AZURE_BLOB_BASE_URL = "https://embeddingassistantfiles.blob.core.windows.net/resources/"
+
 SYSTEM_PERSONA = """You are an AI assistant helping academic staff embed employability skills into their courses at the University of Greenwich.
 Be practical, supportive, and link to the provided resources when appropriate."""
-
-# ── Load known resource files (PDF, PPTX, DOCX) ──
-resources = {
-    "cv": ["cv-template.pptx"],
-    "cover letter": ["cover-letter.docx"],
-    "checklist": ["checklist.pdf"]
-}
 
 # ── Load FAISS vector index ──
 try:
@@ -37,11 +33,11 @@ except Exception as e:
     VECTOR_INDEX = None
     QA_CHAIN = None
 
-# ── Load pathway data ──
+# ── Load pathway metadata JSON (static reference for link generation) ──
 try:
     with open("pathways.json", "r") as f:
         PATHWAYS = json.load(f)
-    print("✅ Pathways loaded")
+    print("✅ pathways.json loaded")
 except Exception as e:
     print(f"⚠️ Could not load pathways.json: {e}")
     PATHWAYS = []
@@ -59,9 +55,8 @@ def ask_gpt():
     data = request.get_json()
     user_message = data.get("message", "").lower()
 
-    use_vector = any(word in user_message for word in ["cv", "checklist", "cover letter", "template", "document", "ppt", "doc", "pdf"])
-
-    if use_vector and QA_CHAIN:
+    # Use vector store for intelligent QA
+    if QA_CHAIN:
         answer = QA_CHAIN.run(user_message)
     else:
         gpt_resp = client.chat.completions.create(
@@ -73,31 +68,53 @@ def ask_gpt():
         )
         answer = gpt_resp.choices[0].message.content
 
-    matched_resources = []
-    for keyword, files in resources.items():
-        if keyword in user_message:
-            matched_resources.extend(files)
+    # Match files for download links
+    file_links = find_document_links(user_message)
 
+    # Match pathways from metadata
     matched_pathways = match_pathways(user_message)
 
     return jsonify({
         "reply": answer,
-        "resources": matched_resources,
+        "downloads": file_links,
         "pathways": matched_pathways
     })
 
+def find_document_links(user_input):
+    keywords = ["cv", "checklist", "ppt", "doc", "cover letter", "template"]
+    matched_files = []
+
+    # Manually define known files for now
+    all_files = [
+        "cv-template.pptx.pptx",
+        "cover-letter.docx.docx",
+        "checklist.pdf.pdf"
+    ]
+
+    for file in all_files:
+        for keyword in keywords:
+            if keyword in user_input.lower() and keyword in file.lower():
+                matched_files.append({
+                    "name": file,
+                    "url": AZURE_BLOB_BASE_URL + file
+                })
+
+    return matched_files
+
 def match_pathways(user_input):
-    results = []
+    matches = []
     for entry in PATHWAYS:
-        if any(keyword in user_input for keyword in entry["keywords"]):
-            results.append({
+        text_blob = (entry.get("title", "") + " " + entry.get("description", "")).lower()
+        if any(kw in user_input for kw in entry.get("keywords", [])) or any(word in text_blob for word in user_input.split()):
+            matches.append({
                 "title": entry["title"],
                 "description": entry["description"],
                 "url": entry["url"]
             })
-    return results
+    return matches
 
-# ── Local run only for Replit testing ──
+# ── Local run for Replit testing ──
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
 
