@@ -7,7 +7,6 @@ python-docx
 python-pptx
 PyMuPDF==1.24.13
 langchain
+langchain-community
+langchain-openai
 faiss-cpu
-tiktoken
-docx
-fitz
