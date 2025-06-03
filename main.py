@@ -1,176 +1,103 @@
 import os
 import json
-from io import BytesIO
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from openai import OpenAI
-from azure.storage.blob import BlobServiceClient
-import fitz  # PyMuPDF
-import docx  # python-docx
-from pptx import Presentation  # python-pptx
+from dotenv import load_dotenv
 
-# LangChain additions
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
+
+load_dotenv()
 
 app = Flask(__name__, static_folder="static")
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# ── System prompt ──
-SYSTEM_PERSONA = """
-You are the “Greenwich Employability Embedding Assistant”, an employability adviser for the
-Employability & Apprenticeship Directorate at the University of Greenwich (UK) with extensive experience.
-Audience: academic staff (lecturers, module leaders, tutors) who want to embed
-employability skills and resources into their curriculum.
+SYSTEM_PERSONA = """You are an AI assistant helping academic staff embed employability skills into their courses at the University of Greenwich.
+Be practical, supportive, and link to the provided resources when appropriate."""
 
-Speaking style:
-• British English / UK spelling only and academic-friendly tone.
-• Professional and wholly relevant with specifics.
-• Concise and clear.
-
-Never mention internal implementation details (e.g., JSON, code).
-"""
-
-# ── Static fallback files ──
+# ── Load known resource files (PDF, PPTX, DOCX) ──
 resources = {
-    "cv": [
-        {"name": "CV Template", "url": "/static/cv-template.pptx", "kind": "file"},
-        {"name": "Employability Checklist", "url": "/static/checklist.pdf", "kind": "file"},
-    ],
-    "cover letter": [
-        {"name": "Cover Letter Template", "url": "/static/cover-letter.docx", "kind": "file"}
-    ]
+    "cv": ["cv-template.pptx"],
+    "cover letter": ["cover-letter.docx"],
+    "checklist": ["checklist.pdf"]
 }
 
-# ── Load pathways.json ──
+# ── Load FAISS vector index ──
 try:
-    with open("pathways.json", "r", encoding="utf-8") as f:
-        PATHWAYS = json.load(f)
+    VECTOR_INDEX = FAISS.load_local("faiss_index", OpenAIEmbeddings(), allow_dangerous_deserialization=True)
+    QA_CHAIN = RetrievalQA.from_chain_type(
+        llm=ChatOpenAI(model="gpt-3.5-turbo"),
+        retriever=VECTOR_INDEX.as_retriever()
+    )
+    print("✅ FAISS vector store loaded")
 except Exception as e:
-    print("⚠️ Pathways JSON error →", e)
+    print(f"⚠️ Could not load FAISS vector store: {e}")
+    VECTOR_INDEX = None
+    QA_CHAIN = None
+
+# ── Load pathway data ──
+try:
+    with open("pathways.json", "r") as f:
+        PATHWAYS = json.load(f)
+    print("✅ Pathways loaded")
+except Exception as e:
+    print(f"⚠️ Could not load pathways.json: {e}")
     PATHWAYS = []
 
-def find_matching_pathways(query: str, limit: int = 5):
-    q = query.lower()
-    matches = []
-    for p in PATHWAYS:
-        if any(kw in q for kw in p.get("keywords", [])):
-            matches.append({
-                "name": p["title"],
-                "url": p["url"],
-                "info": p.get("description", ""),
-                "kind": "pathway"
-            })
-        if len(matches) >= limit:
-            break
-    return matches
-
-# ── Load FAISS vector store ──
-try:
-    db = FAISS.load_local("faiss_index", OpenAIEmbeddings())
-except Exception as e:
-    print("❌ FAISS index loading failed:", e)
-    db = None
-
-# ── Azure file reader ──
-def download_blob_text(filename):
-    try:
-        conn_str = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
-        blob_service = BlobServiceClient.from_connection_string(conn_str)
-        container = blob_service.get_container_client("resources")
-        blob = container.get_blob_client(filename)
-        stream = BytesIO(blob.download_blob().readall())
-
-        if filename.endswith(".pdf"):
-            text = ""
-            with fitz.open(stream=stream, filetype="pdf") as pdf:
-                for page in pdf:
-                    text += page.get_text()
-            return text
-
-        elif filename.endswith(".docx"):
-            doc = docx.Document(stream)
-            return "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
-
-        elif filename.endswith(".pptx"):
-            prs = Presentation(stream)
-            text = ""
-            for slide in prs.slides:
-                for shape in slide.shapes:
-                    if hasattr(shape, "text"):
-                        text += shape.text + "\n"
-            return text
-
-        else:
-            return "⚠️ Unsupported file type."
-
-    except Exception as e:
-        return f"❌ Error reading file: {e}"
-
-# ── Routes ──
 @app.route("/")
 def index():
     return app.send_static_file("index.html")
 
+@app.route("/static/<path:filename>")
+def serve_static(filename):
+    return send_from_directory(app.static_folder, filename)
+
 @app.route("/ask", methods=["POST"])
 def ask_gpt():
     data = request.get_json()
-    user_message = data.get("message", "")
+    user_message = data.get("message", "").lower()
 
-    if db is None:
-        gpt_resp = client.chat.completions.create(model="gpt-3.5-turbo",
-                                                  messages=[
-                                                      {"role": "system", "content": SYSTEM_PERSONA},
-                                                      {"role": "user", "content": user_message}
-                                                  ])
-        answer = gpt_resp.choices[0].message.content
+    use_vector = any(word in user_message for word in ["cv", "checklist", "cover letter", "template", "document", "ppt", "doc", "pdf"])
+
+    if use_vector and QA_CHAIN:
+        answer = QA_CHAIN.run(user_message)
     else:
-        retriever = db.as_retriever(search_kwargs={"k": 5})
-
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", SYSTEM_PERSONA),
-            ("user", "{question}\n\nRelevant context:\n{context}")
-        ])
-
-        chain = (
-            RunnableParallel({
-                "context": retriever,
-                "question": RunnablePassthrough()
-            })
-            | prompt
-            | ChatOpenAI(model="gpt-3.5-turbo")
+        gpt_resp = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": SYSTEM_PERSONA},
+                {"role": "user", "content": user_message}
+            ]
         )
+        answer = gpt_resp.choices[0].message.content
 
-        answer = chain.invoke(user_message).content
+    matched_resources = []
+    for keyword, files in resources.items():
+        if keyword in user_message:
+            matched_resources.extend(files)
 
-    matched = []
-    for kw, files in resources.items():
-        if kw in user_message.lower():
-            matched.extend(files)
+    matched_pathways = match_pathways(user_message)
 
-    matched.extend(find_matching_pathways(user_message))
+    return jsonify({
+        "reply": answer,
+        "resources": matched_resources,
+        "pathways": matched_pathways
+    })
 
-    return jsonify({"reply": answer, "resources": matched})
+def match_pathways(user_input):
+    results = []
+    for entry in PATHWAYS:
+        if any(keyword in user_input for keyword in entry["keywords"]):
+            results.append({
+                "title": entry["title"],
+                "description": entry["description"],
+                "url": entry["url"]
+            })
+    return results
 
-@app.route("/read-file")
-def read_file():
-    filename = request.args.get("name")
-    if not filename:
-        return "⚠️ Please provide a filename using ?name=FILENAME"
-    content = download_blob_text(filename)
-    return f"<pre>{content}</pre>"
-
-@app.route("/static/<path:filename>")
-def static_files(filename):
-    return app.send_static_file(filename)
-
-@app.errorhandler(404)
-def not_found(e):
-    return app.send_static_file("index.html")
-
-# ── Replit-specific local dev port ──
+# ── Local run only for Replit testing ──
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
 

@@ -1,12 +1,8 @@
-flask
-openai
-python-dotenv
-gunicorn
 azure-storage-blob
 python-docx
 python-pptx
-PyMuPDF==1.24.13
+PyMuPDF
 langchain
 langchain-community
 langchain-openai
-faiss-cpu
+

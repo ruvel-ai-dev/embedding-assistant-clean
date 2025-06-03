@@ -1,61 +1,78 @@
 import os
-import fitz
-import docx
-from pptx import Presentation
+import json
 from io import BytesIO
 from azure.storage.blob import BlobServiceClient
 
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
+import fitz  # PyMuPDF
+import docx
+from pptx import Presentation
 
-# Connect to Azure Blob Storage
-conn_str = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
-blob_service = BlobServiceClient.from_connection_string(conn_str)
-container = blob_service.get_container_client("resources")
+from langchain_community.vectorstores import FAISS
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain.docstore.document import Document
 
-def extract_text_from_blob(blob_name):
-    blob = container.get_blob_client(blob_name)
-    stream = BytesIO(blob.download_blob().readall())
+from dotenv import load_dotenv
+load_dotenv()
 
-    if blob_name.endswith(".pdf"):
+# ── Connect to Azure Blob ──
+connection_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+container_name = "resources"
+blob_service = BlobServiceClient.from_connection_string(connection_str)
+container_client = blob_service.get_container_client(container_name)
+
+# ── Load and parse supported files ──
+docs = []
+
+for blob in container_client.list_blobs():
+    filename = blob.name
+    try:
+        stream = container_client.get_blob_client(blob).download_blob().readall()
         text = ""
-        with fitz.open(stream=stream, filetype="pdf") as pdf:
-            for page in pdf:
-                text += page.get_text()
-        return text
 
-    elif blob_name.endswith(".docx"):
-        doc = docx.Document(stream)
-        return "\n".join(p.text for p in doc.paragraphs)
+        if filename.endswith(".pdf"):
+            with fitz.open(stream=BytesIO(stream), filetype="pdf") as pdf:
+                for page in pdf:
+                    text += page.get_text()
 
-    elif blob_name.endswith(".pptx"):
-        prs = Presentation(stream)
-        text = ""
-        for slide in prs.slides:
-            for shape in slide.shapes:
-                if hasattr(shape, "text"):
-                    text += shape.text + "\n"
-        return text
+        elif filename.endswith(".docx"):
+            doc = docx.Document(BytesIO(stream))
+            text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
 
-    return ""
+        elif filename.endswith(".pptx"):
+            prs = Presentation(BytesIO(stream))
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if hasattr(shape, "text"):
+                        text += shape.text + "\n"
 
-def build_vectorstore():
-    documents = []
-    for blob in container.list_blobs():
-        text = extract_text_from_blob(blob.name)
-        documents.append(text)
+        else:
+            print(f"⚠️ Skipping unsupported file: {filename}")
+            continue
 
-    print("✅ Read all files from Azure. Now chunking and embedding...")
+        docs.append(Document(page_content=text, metadata={"source": filename}))
+        print(f"✅ Processed: {filename}")
 
-    splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    all_chunks = splitter.create_documents(documents)
+    except Exception as e:
+        print(f"❌ Failed to process {filename} → {e}")
 
-    embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.from_documents(all_chunks, embeddings)
-    vectorstore.save_local("faiss_index")
+# ── Optionally include pathways.json ──
+try:
+    with open("pathways.json", "r", encoding="utf-8") as f:
+        pathway_data = json.load(f)
+    for entry in pathway_data:
+        content = f"{entry['title']}\n{entry['description']}\n{entry['url']}"
+        docs.append(Document(page_content=content, metadata={"source": "pathways.json"}))
+    print("✅ Pathways added to document list")
+except Exception as e:
+    print(f"⚠️ Could not read pathways.json → {e}")
 
-    print("✅ Vector store built and saved as 'faiss_index'.")
+# ── Split and embed ──
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
+split_docs = text_splitter.split_documents(docs)
 
-if __name__ == "__main__":
-    build_vectorstore()
+embedding = OpenAIEmbeddings()
+vectorstore = FAISS.from_documents(split_docs, embedding)
+
+vectorstore.save_local("faiss_index")
+print("✅ FAISS index built and saved")
