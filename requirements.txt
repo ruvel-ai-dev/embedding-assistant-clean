@@ -7,6 +7,7 @@ openai
 langchain
 langchain-community
 langchain-openai
+faiss-cpu
 
 # Azure Blob Storage
 azure-storage-blob
@@ -15,9 +16,3 @@ azure-storage-blob
 python-docx
 python-pptx
 PyMuPDF
-
-# Optional (for running locally on Replit etc.)
-tiktoken
-docx
-fitz
-requests
