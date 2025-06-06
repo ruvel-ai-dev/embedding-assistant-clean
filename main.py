@@ -7,6 +7,7 @@ from azure.storage.blob import BlobServiceClient
 
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import OpenAIEmbeddings
+from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
 
@@ -41,15 +42,18 @@ Do not:
 You are familiar with UK Higher Education policies, career services, graduate employability strategies, and industry expectations.
 """
 
-
 # ── Load FAISS vector index ──
 try:
     VECTOR_INDEX = FAISS.load_local("faiss_index", OpenAIEmbeddings(), allow_dangerous_deserialization=True)
+    RETRIEVER = MultiQueryRetriever.from_llm(
+        retriever=VECTOR_INDEX.as_retriever(),
+        llm=ChatOpenAI(model="gpt-3.5-turbo")
+    )
     QA_CHAIN = RetrievalQA.from_chain_type(
         llm=ChatOpenAI(model="gpt-3.5-turbo"),
-        retriever=VECTOR_INDEX.as_retriever()
+        retriever=RETRIEVER
     )
-    print("✅ FAISS vector store loaded")
+    print("✅ FAISS vector store and MultiQueryRetriever loaded")
 except Exception as e:
     print(f"⚠️ Could not load FAISS vector store: {e}")
     VECTOR_INDEX = None
@@ -101,7 +105,7 @@ def ask_gpt():
         "pathways": matched_pathways
     })
 
-# 🔍 NEW: Smart document link generation using FAISS results
+# 🔍 Smart document link generation using FAISS
 def get_links_from_faiss(query):
     matched_files = set()
     try:
@@ -115,19 +119,28 @@ def get_links_from_faiss(query):
 
     return [{"name": fname, "url": f"{AZURE_BLOB_BASE_URL}{fname}"} for fname in matched_files]
 
-# ✅ Existing pathway matcher (kept the same)
+# ✅ Improved pathway matching logic
 def match_pathways(user_input):
     matches = []
+    input_words = set(user_input.lower().split())
+
     for entry in PATHWAYS:
-        combined_text = (entry.get("title", "") + " " + entry.get("description", "")).lower()
-        if any(kw in user_input for kw in entry.get("keywords", [])) or any(word in combined_text for word in user_input.split()):
+        entry_keywords = set(kw.lower() for kw in entry.get("keywords", []))
+        title_words = set(entry.get("title", "").lower().split())
+        description_words = set(entry.get("description", "").lower().split())
+
+        # Match if there's at least 1 keyword match or 2+ overlapping words with title/description
+        keyword_match = len(entry_keywords & input_words) > 0
+        text_match = len((title_words | description_words) & input_words) >= 2
+
+        if keyword_match or text_match:
             matches.append({
                 "title": entry["title"],
                 "description": entry["description"],
                 "url": entry["url"]
             })
+
     return matches
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-
