@@ -3,32 +3,32 @@ import fitz  # PyMuPDF
 import docx
 import pptx
 from azure.storage.blob import BlobServiceClient
-from langchain_community.document_loaders import TextLoader
+from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
-
-# Load environment variables
 from dotenv import load_dotenv
+
+# ── Load environment variables ──
 load_dotenv()
 
-# Connect to Azure Blob Storage
+# ── Azure Blob Storage Settings ──
 connection_string = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
 container_name = "resources"
 blob_service_client = BlobServiceClient.from_connection_string(connection_string)
 container_client = blob_service_client.get_container_client(container_name)
 
-# Download all blobs from Azure storage
+# ── Download all files to local temp folder ──
 download_dir = "./downloads"
 os.makedirs(download_dir, exist_ok=True)
 
 documents = []
+
 for blob in container_client.list_blobs():
     blob_name = blob.name
     download_path = os.path.join(download_dir, blob_name)
     with open(download_path, "wb") as f:
-        blob_client = container_client.get_blob_client(blob)
-        f.write(blob_client.download_blob().readall())
+        f.write(container_client.download_blob(blob).readall())
     print(f"✅ Downloaded: {blob_name}")
 
     ext = blob_name.lower().split(".")[-1]
@@ -48,18 +48,14 @@ for blob in container_client.list_blobs():
             print(f"⚠️ Unsupported file format: {blob_name}")
             continue
 
-        documents.append({"text": text, "source": blob_name})
+        documents.append(Document(page_content=text, metadata={"source": blob_name}))
         print(f"✅ Processed: {blob_name}")
     except Exception as e:
-        print(f"❌ Error reading {blob_name}: {e}")
+        print(f"❌ Error processing {blob_name}: {e}")
 
-# Convert to LangChain documents
-from langchain.schema import Document
-docs = [Document(page_content=doc["text"], metadata={"source": doc["source"]}) for doc in documents]
-
-# Split and embed
+# ── Split and embed ──
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-split_docs = text_splitter.split_documents(docs)
+split_docs = text_splitter.split_documents(documents)
 
 embedding = OpenAIEmbeddings()
 db = FAISS.from_documents(split_docs, embedding)

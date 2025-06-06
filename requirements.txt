@@ -1,18 +1,12 @@
-# Core dependencies
 flask
 python-dotenv
 openai
-
-# LangChain and vector embedding
 langchain
 langchain-community
 langchain-openai
 faiss-cpu
-
-# Azure Blob Storage
 azure-storage-blob
-
-# Document reading
 python-docx
 python-pptx
 PyMuPDF
+

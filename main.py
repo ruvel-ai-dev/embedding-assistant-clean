@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI
 load_dotenv()
 
 app = Flask(__name__, static_folder="static")
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ── Azure Storage Settings ──
 AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
@@ -60,9 +60,10 @@ def ask_gpt():
     data = request.get_json()
     user_message = data.get("message", "").lower()
 
-    # Answer query using FAISS vector store if available
+    # Use FAISS chain or fallback to OpenAI chat
     if QA_CHAIN:
         answer = QA_CHAIN.run(user_message)
+        file_links = get_links_from_faiss(user_message)
     else:
         gpt_resp = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -72,11 +73,9 @@ def ask_gpt():
             ]
         )
         answer = gpt_resp.choices[0].message.content
+        file_links = []
 
-    # Dynamically find matching files
-    file_links = find_document_links(user_message)
-
-    # Pathway matches
+    # Find pathways
     matched_pathways = match_pathways(user_message)
 
     return jsonify({
@@ -85,26 +84,21 @@ def ask_gpt():
         "pathways": matched_pathways
     })
 
-def find_document_links(user_input):
-    matched_files = []
-
+# 🔍 NEW: Smart document link generation using FAISS results
+def get_links_from_faiss(query):
+    matched_files = set()
     try:
-        blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
-        container_client = blob_service_client.get_container_client(AZURE_CONTAINER_NAME)
-        blob_list = container_client.list_blobs()
-
-        for blob in blob_list:
-            filename = blob.name
-            if any(word in filename.lower() for word in user_input.lower().split()):
-                matched_files.append({
-                    "name": filename,
-                    "url": f"{AZURE_BLOB_BASE_URL}{filename}"
-                })
+        docs = VECTOR_INDEX.similarity_search(query, k=6)
+        for doc in docs:
+            filename = os.path.basename(doc.metadata.get("source", ""))
+            if filename:
+                matched_files.add(filename)
     except Exception as e:
-        print(f"⚠️ Azure file match failed: {e}")
+        print(f"⚠️ Failed to retrieve FAISS docs: {e}")
 
-    return matched_files
+    return [{"name": fname, "url": f"{AZURE_BLOB_BASE_URL}{fname}"} for fname in matched_files]
 
+# ✅ Existing pathway matcher (kept the same)
 def match_pathways(user_input):
     matches = []
     for entry in PATHWAYS:
@@ -117,7 +111,6 @@ def match_pathways(user_input):
             })
     return matches
 
-# ── Local development only ──
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
 
