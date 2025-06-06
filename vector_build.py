@@ -27,10 +27,19 @@ documents = []
 for blob in container_client.list_blobs():
     blob_name = blob.name
     download_path = os.path.join(download_dir, blob_name)
-    with open(download_path, "wb") as f:
-        f.write(container_client.download_blob(blob).readall())
-    print(f"✅ Downloaded: {blob_name}")
 
+    # ✅ FIX: Create nested directories if needed
+    os.makedirs(os.path.dirname(download_path), exist_ok=True)
+
+    try:
+        with open(download_path, "wb") as f:
+            f.write(container_client.download_blob(blob).readall())
+        print(f"✅ Downloaded: {blob_name}")
+    except Exception as e:
+        print(f"❌ Failed to download {blob_name}: {e}")
+        continue
+
+    # ── Extract text based on file type ──
     ext = blob_name.lower().split(".")[-1]
     try:
         if ext == "pdf":
@@ -40,7 +49,10 @@ for blob in container_client.list_blobs():
             text = "\n".join([p.text for p in docx.Document(download_path).paragraphs])
         elif ext == "pptx":
             prs = pptx.Presentation(download_path)
-            text = "\n".join([shape.text for slide in prs.slides for shape in slide.shapes if hasattr(shape, "text")])
+            text = "\n".join([
+                shape.text for slide in prs.slides
+                for shape in slide.shapes if hasattr(shape, "text")
+            ])
         elif ext == "txt":
             with open(download_path, "r", encoding="utf-8") as f:
                 text = f.read()
@@ -61,4 +73,3 @@ embedding = OpenAIEmbeddings()
 db = FAISS.from_documents(split_docs, embedding)
 db.save_local("faiss_index")
 print("✅ FAISS index built and saved")
-
