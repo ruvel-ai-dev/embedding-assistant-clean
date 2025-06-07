@@ -7,7 +7,6 @@ from azure.storage.blob import BlobServiceClient
 
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
 
@@ -45,15 +44,11 @@ You are familiar with UK Higher Education policies, career services, graduate em
 # ── Load FAISS vector index ──
 try:
     VECTOR_INDEX = FAISS.load_local("faiss_index", OpenAIEmbeddings(), allow_dangerous_deserialization=True)
-    RETRIEVER = MultiQueryRetriever.from_llm(
-        retriever=VECTOR_INDEX.as_retriever(),
-        llm=ChatOpenAI(model="gpt-3.5-turbo")
-    )
     QA_CHAIN = RetrievalQA.from_chain_type(
         llm=ChatOpenAI(model="gpt-3.5-turbo"),
-        retriever=RETRIEVER
+        retriever=VECTOR_INDEX.as_retriever()
     )
-    print("✅ FAISS vector store and MultiQueryRetriever loaded")
+    print("✅ FAISS vector store loaded")
 except Exception as e:
     print(f"⚠️ Could not load FAISS vector store: {e}")
     VECTOR_INDEX = None
@@ -81,10 +76,9 @@ def ask_gpt():
     data = request.get_json()
     user_message = data.get("message", "").lower()
 
-    # Use FAISS chain or fallback to OpenAI chat
     if QA_CHAIN:
         answer = QA_CHAIN.run(user_message)
-        file_links = get_links_from_faiss(user_message)
+        file_links = get_links_with_summaries(user_message)
     else:
         gpt_resp = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -96,7 +90,6 @@ def ask_gpt():
         answer = gpt_resp.choices[0].message.content
         file_links = []
 
-    # Find pathways
     matched_pathways = match_pathways(user_message)
 
     return jsonify({
@@ -105,41 +98,37 @@ def ask_gpt():
         "pathways": matched_pathways
     })
 
-# 🔍 Smart document link generation using FAISS
-def get_links_from_faiss(query):
-    matched_files = set()
+# 🔍 Generate download links + LLM-generated summaries
+def get_links_with_summaries(query):
+    results = []
+    seen = set()
     try:
         docs = VECTOR_INDEX.similarity_search(query, k=6)
         for doc in docs:
-            filename = os.path.basename(doc.metadata.get("source", ""))
-            if filename:
-                matched_files.add(filename)
+            fname = os.path.basename(doc.metadata.get("source", ""))
+            summary = doc.metadata.get("summary", "")
+            if fname and fname not in seen:
+                seen.add(fname)
+                results.append({
+                    "name": fname,
+                    "url": f"{AZURE_BLOB_BASE_URL}{fname}",
+                    "summary": summary
+                })
     except Exception as e:
-        print(f"⚠️ Failed to retrieve FAISS docs: {e}")
+        print(f"⚠️ Failed to fetch summary metadata: {e}")
+    return results
 
-    return [{"name": fname, "url": f"{AZURE_BLOB_BASE_URL}{fname}"} for fname in matched_files]
-
-# ✅ Improved pathway matching logic
+# ✅ Pathway matcher
 def match_pathways(user_input):
     matches = []
-    input_words = set(user_input.lower().split())
-
     for entry in PATHWAYS:
-        entry_keywords = set(kw.lower() for kw in entry.get("keywords", []))
-        title_words = set(entry.get("title", "").lower().split())
-        description_words = set(entry.get("description", "").lower().split())
-
-        # Match if there's at least 1 keyword match or 2+ overlapping words with title/description
-        keyword_match = len(entry_keywords & input_words) > 0
-        text_match = len((title_words | description_words) & input_words) >= 2
-
-        if keyword_match or text_match:
+        combined_text = (entry.get("title", "") + " " + entry.get("description", "")).lower()
+        if any(kw in user_input for kw in entry.get("keywords", [])) or any(word in combined_text for word in user_input.split()):
             matches.append({
                 "title": entry["title"],
                 "description": entry["description"],
                 "url": entry["url"]
             })
-
     return matches
 
 if __name__ == "__main__":

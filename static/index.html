@@ -13,9 +13,11 @@
       margin: 4px 0;
       text-decoration: none;
     }
-    .pathways p {
-      margin: 0;
+    .summary {
       font-size: 0.9rem;
+      margin-bottom: 12px;
+      padding-left: 10px;
+      color: #555;
     }
   </style>
 </head>
@@ -90,6 +92,12 @@
             link.innerText = "📄 " + file.name;
             link.target = "_blank";
             dWrap.appendChild(link);
+            if (file.summary) {
+              const summary = document.createElement("div");
+              summary.className = "summary";
+              summary.innerText = file.summary;
+              dWrap.appendChild(summary);
+            }
           });
         }
 
@@ -119,6 +127,7 @@
   </script>
 </body>
 </html>
+
 
 
 
