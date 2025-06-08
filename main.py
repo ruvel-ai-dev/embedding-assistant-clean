@@ -42,7 +42,7 @@ You are familiar with UK Higher Education policies, career services, graduate em
 
 Limit your responses to 200 words excluding download links and pathway suggestions."""
 
-# ── Load FAISS vector index ──
+# ── Load document vector index ──
 try:
     VECTOR_INDEX = FAISS.load_local("faiss_index",
                                     OpenAIEmbeddings(),
@@ -56,14 +56,16 @@ except Exception as e:
     VECTOR_INDEX = None
     QA_CHAIN = None
 
-# ── Load pathway metadata ──
+# ── Load pathway semantic index ──
 try:
-    with open("pathways.json", "r") as f:
-        PATHWAYS = json.load(f)
-    print("✅ pathways.json loaded")
+    PATHWAY_INDEX = FAISS.load_local(
+        "pathways_index",
+        OpenAIEmbeddings(),
+        allow_dangerous_deserialization=True)
+    print("✅ pathways_index loaded")
 except Exception as e:
-    print(f"⚠️ Could not load pathways.json: {e}")
-    PATHWAYS = []
+    print(f"⚠️ Could not load pathways_index: {e}")
+    PATHWAY_INDEX = None
 
 
 @app.route("/")
@@ -128,20 +130,23 @@ def get_links_with_summaries(query):
     return results
 
 
-# ✅ Pathway matcher
+# ✅ Pathway matcher via semantic search
 def match_pathways(user_input):
-    matches = []
-    for entry in PATHWAYS:
-        combined_text = (entry.get("title", "") + " " +
-                         entry.get("description", "")).lower()
-        if any(kw in user_input for kw in entry.get("keywords", [])) or any(
-                word in combined_text for word in user_input.split()):
-            matches.append({
-                "title": entry["title"],
-                "description": entry["description"],
-                "url": entry["url"]
+    if not PATHWAY_INDEX:
+        return []
+    results = []
+    try:
+        docs = PATHWAY_INDEX.similarity_search(user_input, k=5)
+        for doc in docs:
+            md = doc.metadata
+            results.append({
+                "title": md.get("title", ""),
+                "description": md.get("description", ""),
+                "url": md.get("url", "")
             })
-    return matches
+    except Exception as e:
+        print(f"⚠️ Pathway search failed: {e}")
+    return results
 
 
 if __name__ == "__main__":
