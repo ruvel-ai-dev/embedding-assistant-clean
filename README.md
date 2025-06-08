@@ -10,6 +10,33 @@ Academic staff often find it difficult to identify suitable employability resour
 - Lecturers complete a short form describing their module.
 - The assistant returns relevant resources and guidance instantly using an AI model with embedded institutional knowledge.
 
+## Setup
+
+1. Install the Python packages:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Create a `.env` file containing your credentials:
+
+   ```text
+   OPENAI_API_KEY=sk-...
+   AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=...
+   ```
+
+3. Build the document index (downloads files from Azure Storage):
+
+   ```bash
+   python vector_build.py
+   ```
+
+4. Whenever you modify `pathways.json`, rebuild the pathway index:
+
+   ```bash
+   python build_pathway_index.py
+   ```
+
 ## AI Persona
 
 The assistant is configured with the following persona:
@@ -30,13 +57,21 @@ All documents are stored in the `static/` directory and hard-linked in responses
 
 ### Pathway Matching
 
-The assistant also recommends relevant employability pathways based on subject-specific and skill-related keywords. Pathways are preloaded from a `pathways.json` file and include:
+The assistant now recommends employability pathways using **semantic search**. All pathway entries in `pathways.json` are embedded and stored in a separate FAISS index. Queries are matched against this index to surface the most relevant pathways based on meaning, not just keywords. Each pathway record contains:
 
-- A title
-- A description
-- A direct link
+- Title
+- Description
+- Direct link
 
-These may cover areas such as sector-specific CVs, employer project briefs, and skills reflection activities.
+These may cover areas such as sector-specific CVs, employer project briefs and skills reflection activities.
+
+Whenever you modify `pathways.json`, rebuild the FAISS index by running:
+
+```bash
+python build_pathway_index.py
+```
+
+This will regenerate the `pathways_index` folder used at runtime.
 
 ## How It Works
 
