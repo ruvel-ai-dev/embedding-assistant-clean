@@ -16,5 +16,245 @@
     "description": "Referencing, critical writing, plagiarism.",
     "keywords": ["writing", "referencing", "harvard", "plagiarism"],
     "url": "https://targetconnect.gre.ac.uk/pathways/academic-writing"
+  },
+  {
+    "title": "Creative CV Design",
+    "description": "Examples and tips for CVs in creative industries.",
+    "keywords": ["cv", "design", "creative"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/creative-cv"
+  },
+  {
+    "title": "Interview Skills Workshop",
+    "description": "Practice common interview questions and techniques.",
+    "keywords": ["interview", "practice", "skills"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/interview-workshop"
+  },
+  {
+    "title": "Networking for Introverts",
+    "description": "Strategies to build connections when networking feels daunting.",
+    "keywords": ["networking", "introvert", "connections"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/introvert-networking"
+  },
+  {
+    "title": "Finding Placements",
+    "description": "How to search and apply for placement opportunities.",
+    "keywords": ["placements", "applications", "search"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/placement-search"
+  },
+  {
+    "title": "Global Careers",
+    "description": "Resources for working or studying abroad.",
+    "keywords": ["international", "global", "study abroad"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/global-careers"
+  },
+  {
+    "title": "Building Commercial Awareness",
+    "description": "Develop knowledge of industry trends and business needs.",
+    "keywords": ["commercial", "business", "industry"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/commercial-awareness"
+  },
+  {
+    "title": "Project Management Basics",
+    "description": "Essential skills for planning and delivering projects.",
+    "keywords": ["project", "planning", "delivery"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/project-management"
+  },
+  {
+    "title": "Enhancing Presentation Skills",
+    "description": "Guidance on confident public speaking and visuals.",
+    "keywords": ["presentation", "public speaking", "slides"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/presentation-skills"
+  },
+  {
+    "title": "Data Analysis with Excel",
+    "description": "Introductory tutorials for analysing data in Excel.",
+    "keywords": ["excel", "data", "analysis"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/excel-analysis"
+  },
+  {
+    "title": "Creating a Portfolio",
+    "description": "Showcase your work effectively to employers.",
+    "keywords": ["portfolio", "showcase", "creative"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/portfolio-creation"
+  },
+  {
+    "title": "Effective Time Management",
+    "description": "Tools and techniques to balance studies and work.",
+    "keywords": ["time management", "productivity", "planning"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/time-management"
+  },
+  {
+    "title": "Public Sector Careers",
+    "description": "Explore roles in government and public services.",
+    "keywords": ["public sector", "government", "policy"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/public-sector"
+  },
+  {
+    "title": "Entrepreneurship 101",
+    "description": "Resources for starting your own business or side project.",
+    "keywords": ["entrepreneurship", "startup", "business"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/entrepreneurship"
+  },
+  {
+    "title": "Volunteering Opportunities",
+    "description": "Find volunteer roles to build experience and skills.",
+    "keywords": ["volunteering", "experience", "skills"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/volunteering"
+  },
+  {
+    "title": "STEM Career Routes",
+    "description": "Overview of careers in science, technology, engineering, and maths.",
+    "keywords": ["stem", "science", "engineering"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/stem-careers"
+  },
+  {
+    "title": "Law Career Pathways",
+    "description": "Insights into legal professions and qualifications.",
+    "keywords": ["law", "legal", "solicitor"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/law-careers"
+  },
+  {
+    "title": "Teaching as a Career",
+    "description": "Routes into teaching and gaining classroom experience.",
+    "keywords": ["teaching", "education", "classroom"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/teaching"
+  },
+  {
+    "title": "Healthcare Professions",
+    "description": "Guidance on NHS roles and health sector opportunities.",
+    "keywords": ["healthcare", "nhs", "clinical"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/healthcare"
+  },
+  {
+    "title": "Building Your Personal Brand",
+    "description": "Use social media to enhance professional reputation.",
+    "keywords": ["personal brand", "social media", "reputation"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/personal-brand"
+  },
+  {
+    "title": "Research Careers",
+    "description": "Options for continuing in academia or research roles.",
+    "keywords": ["research", "academia", "phd"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/research-careers"
+  },
+  {
+    "title": "Building Confidence",
+    "description": "Exercises to increase professional self-confidence.",
+    "keywords": ["confidence", "professional", "skills"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/confidence"
+  },
+  {
+    "title": "Digital Marketing Basics",
+    "description": "Introduction to SEO, content marketing, and analytics.",
+    "keywords": ["marketing", "seo", "digital"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/digital-marketing"
+  },
+  {
+    "title": "Sustainability Careers",
+    "description": "Work in environmental and sustainability sectors.",
+    "keywords": ["sustainability", "environment", "green"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/sustainability"
+  },
+  {
+    "title": "Careers in Finance",
+    "description": "Explore banking, accounting, and financial services roles.",
+    "keywords": ["finance", "banking", "accounting"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/finance-careers"
+  },
+  {
+    "title": "Human Resources Pathway",
+    "description": "Discover HR roles and required skills for success.",
+    "keywords": ["hr", "human resources", "recruitment"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/hr-careers"
+  },
+  {
+    "title": "Events Management",
+    "description": "Organising conferences, exhibitions, and festivals.",
+    "keywords": ["events", "management", "organisation"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/events-management"
+  },
+  {
+    "title": "CVs for Postgraduates",
+    "description": "Crafting an effective CV after completing a master's.",
+    "keywords": ["cv", "postgraduate", "employment"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/postgrad-cv"
+  },
+  {
+    "title": "Creative Industry Internships",
+    "description": "Where to look for internships in media and design fields.",
+    "keywords": ["internships", "creative", "media"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/creative-internships"
+  },
+  {
+    "title": "Careers in Psychology",
+    "description": "Routes into clinical, educational, or research psychology.",
+    "keywords": ["psychology", "clinical", "research"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/psychology-careers"
+  },
+  {
+    "title": "Engineering Placement Year",
+    "description": "Advice on securing a year in industry within engineering.",
+    "keywords": ["engineering", "placement", "industry"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/engineering-placement"
+  },
+  {
+    "title": "Career Change Toolkit",
+    "description": "Support for mature students moving into new fields.",
+    "keywords": ["career change", "mature", "transition"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/career-change"
+  },
+  {
+    "title": "Freelancing Guide",
+    "description": "How to find clients and manage freelance work.",
+    "keywords": ["freelance", "clients", "self-employed"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/freelancing"
+  },
+  {
+    "title": "Placements in Healthcare",
+    "description": "Searching and applying for hospital and clinic placements.",
+    "keywords": ["healthcare", "placement", "clinic"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/healthcare-placement"
+  },
+  {
+    "title": "Job Search Strategies",
+    "description": "Using job boards and networking to secure roles.",
+    "keywords": ["job search", "applications", "networking"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/job-search"
+  },
+  {
+    "title": "Remote Working Tips",
+    "description": "Effective collaboration and wellbeing when working remotely.",
+    "keywords": ["remote", "virtual", "online"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/remote-working"
+  },
+  {
+    "title": "Careers in Sport",
+    "description": "Opportunities in coaching, management, and sports science.",
+    "keywords": ["sport", "coaching", "management"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/sport-careers"
+  },
+  {
+    "title": "Graduate Scheme Applications",
+    "description": "Timeline and tips for applying to graduate schemes.",
+    "keywords": ["graduate scheme", "applications", "deadlines"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/graduate-schemes"
+  },
+  {
+    "title": "Careers in Media Production",
+    "description": "Getting started in TV, film, and digital media production.",
+    "keywords": ["media", "tv", "film"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/media-production"
+  },
+  {
+    "title": "Leadership Development",
+    "description": "Build leadership skills for management roles.",
+    "keywords": ["leadership", "management", "development"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/leadership-development"
+  },
+  {
+    "title": "Presentation Skill Clinic",
+    "description": "Short sessions to refine your presentation style.",
+    "keywords": ["presentation", "confidence", "style"],
+    "url": "https://targetconnect.gre.ac.uk/pathways/presentation-clinic"
   }
 ]
