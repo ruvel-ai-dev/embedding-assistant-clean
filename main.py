@@ -43,11 +43,12 @@ You are familiar with UK Higher Education policies, career services, graduate em
 
 # ── Load FAISS vector index ──
 try:
-    VECTOR_INDEX = FAISS.load_local("faiss_index", OpenAIEmbeddings(), allow_dangerous_deserialization=True)
+    VECTOR_INDEX = FAISS.load_local("faiss_index",
+                                    OpenAIEmbeddings(),
+                                    allow_dangerous_deserialization=True)
     QA_CHAIN = RetrievalQA.from_chain_type(
         llm=ChatOpenAI(model="gpt-3.5-turbo"),
-        retriever=VECTOR_INDEX.as_retriever()
-    )
+        retriever=VECTOR_INDEX.as_retriever())
     print("✅ FAISS vector store loaded")
 except Exception as e:
     print(f"⚠️ Could not load FAISS vector store: {e}")
@@ -63,13 +64,16 @@ except Exception as e:
     print(f"⚠️ Could not load pathways.json: {e}")
     PATHWAYS = []
 
+
 @app.route("/")
 def index():
     return app.send_static_file("index.html")
 
+
 @app.route("/static/<path:filename>")
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
+
 
 @app.route("/ask", methods=["POST"])
 def ask_gpt():
@@ -80,13 +84,18 @@ def ask_gpt():
         answer = QA_CHAIN.run(user_message)
         file_links = get_links_with_summaries(user_message)
     else:
-        gpt_resp = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": SYSTEM_PERSONA},
-                {"role": "user", "content": user_message}
-            ]
-        )
+        gpt_resp = client.chat.completions.create(model="gpt-3.5-turbo",
+                                                  messages=[{
+                                                      "role":
+                                                      "system",
+                                                      "content":
+                                                      SYSTEM_PERSONA
+                                                  }, {
+                                                      "role":
+                                                      "user",
+                                                      "content":
+                                                      user_message
+                                                  }])
         answer = gpt_resp.choices[0].message.content
         file_links = []
 
@@ -97,6 +106,7 @@ def ask_gpt():
         "downloads": file_links,
         "pathways": matched_pathways
     })
+
 
 # 🔍 Generate download links + LLM-generated summaries
 def get_links_with_summaries(query):
@@ -118,18 +128,22 @@ def get_links_with_summaries(query):
         print(f"⚠️ Failed to fetch summary metadata: {e}")
     return results
 
+
 # ✅ Pathway matcher
 def match_pathways(user_input):
     matches = []
     for entry in PATHWAYS:
-        combined_text = (entry.get("title", "") + " " + entry.get("description", "")).lower()
-        if any(kw in user_input for kw in entry.get("keywords", [])) or any(word in combined_text for word in user_input.split()):
+        combined_text = (entry.get("title", "") + " " +
+                         entry.get("description", "")).lower()
+        if any(kw in user_input for kw in entry.get("keywords", [])) or any(
+                word in combined_text for word in user_input.split()):
             matches.append({
                 "title": entry["title"],
                 "description": entry["description"],
                 "url": entry["url"]
             })
     return matches
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
