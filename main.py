@@ -39,7 +39,8 @@ Do not:
 - Use emojis or casual slang
 
 You are familiar with UK Higher Education policies, career services, graduate employability strategies, and industry expectations.
-"""
+
+Limit your responses to 200 words excluding download links and pathway suggestions."""
 
 # ── Load FAISS vector index ──
 try:
@@ -47,7 +48,7 @@ try:
                                     OpenAIEmbeddings(),
                                     allow_dangerous_deserialization=True)
     QA_CHAIN = RetrievalQA.from_chain_type(
-        llm=ChatOpenAI(model="gpt-3.5-turbo"),
+        llm=ChatOpenAI(model="gpt-4-1106-preview"),  # ✅ Upgraded here
         retriever=VECTOR_INDEX.as_retriever())
     print("✅ FAISS vector store loaded")
 except Exception as e:
@@ -84,18 +85,16 @@ def ask_gpt():
         answer = QA_CHAIN.run(user_message)
         file_links = get_links_with_summaries(user_message)
     else:
-        gpt_resp = client.chat.completions.create(model="gpt-3.5-turbo",
-                                                  messages=[{
-                                                      "role":
-                                                      "system",
-                                                      "content":
-                                                      SYSTEM_PERSONA
-                                                  }, {
-                                                      "role":
-                                                      "user",
-                                                      "content":
-                                                      user_message
-                                                  }])
+        gpt_resp = client.chat.completions.create(
+            model="gpt-4-1106-preview",  # ✅ Also upgraded here
+            messages=[{
+                "role": "system",
+                "content": SYSTEM_PERSONA
+            }, {
+                "role": "user",
+                "content": user_message
+            }])
+        max_tokens = 500  # ✅ Added token limit
         answer = gpt_resp.choices[0].message.content
         file_links = []
 
