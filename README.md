@@ -1,119 +1,108 @@
 # Embedding Assistant – Careers Resource Recommender (Prototype)
 
-This is a working prototype of an AI-powered assistant developed to support academic staff at the University of Greenwich in embedding employability into their teaching. It enables lecturers and tutors to quickly access relevant careers resources tailored to their subject, module, and academic level.
+This is a working prototype of an AI-powered assistant designed to support academic staff at the University of Greenwich in embedding employability into the curriculum. It enables lecturers and tutors to access tailored careers resources and pathways based on their subject area, academic level, and module needs.
 
 ## Purpose
 
-Academic staff often find it difficult to identify suitable employability resources that align with their curriculum. This tool simplifies the process by offering tailored recommendations based on brief module descriptions.
+Academic staff often face challenges in identifying employability resources that align with their teaching content. This tool simplifies the process by providing intelligent recommendations based on a brief module description.
 
-- Careers and Employability Advisors maintain the central resource bank (PDFs, Word documents, presentations, and links).
-- Lecturers complete a short form describing their module.
-- The assistant returns relevant resources and guidance instantly using an AI model with embedded institutional knowledge.
-
-## Setup
-
-1. Install the Python packages:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. Create a `.env` file containing your credentials:
-
-   ```text
-   OPENAI_API_KEY=sk-...
-   AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=...
-   ```
-
-3. Build the document index (downloads files from Azure Storage):
-
-   ```bash
-   python vector_build.py
-   ```
-
-4. Whenever you modify `pathways.json`, rebuild the pathway index:
-
-   ```bash
-   python build_pathway_index.py
-   ```
-
-## AI Persona
-
-The assistant is configured with the following persona:
-
-"You are the Greenwich Employability Embedding Assistant, an employability adviser for the Employability & Apprenticeship Directorate at the University of Greenwich (UK) with extensive experience. You support academic staff (lecturers, module leaders, tutors) in embedding employability skills and resources into the curriculum. You write using British English, in a concise, professional tone, avoiding technical implementation terms such as JSON or code."
+- Careers and Employability Advisors manage a centralised resource bank (Word documents, PDFs, presentations, and curated pathway links).
+- Lecturers complete a short online form describing their module and context.
+- The assistant returns curated guidance, resource links, and career pathways using AI and semantic search.
 
 ## Features
 
-### Downloadable Resources
+### 🔍 Intelligent Semantic Matching
 
-The assistant matches keywords in user prompts to static downloadable documents. These include:
+- Uses FAISS vector stores and OpenAI embeddings to match user input with both documents and pathways based on semantic similarity, not just keywords.
 
-- CV Template (PowerPoint)
-- Cover Letter Guide (Word)
-- Employability Checklist (PDF)
+### 📄 Downloadable Documents
 
-All documents are stored in the `static/` directory and hard-linked in responses.
+- Relevant PDF, Word, and PowerPoint files are dynamically retrieved from Azure Blob Storage.
+- Users can select individual or multiple documents to download as a single ZIP file for offline use or Moodle upload.
+- Each document includes a GPT-generated summary for easier previewing.
 
-### Pathway Matching
+### 🔗 Pathway Recommendations (Now Exportable)
 
-The assistant now recommends employability pathways using **semantic search**. All pathway entries in `pathways.json` are embedded and stored in a separate FAISS index. Queries are matched against this index to surface the most relevant pathways based on meaning, not just keywords. Each pathway record contains:
+- The assistant suggests semantically relevant employability pathways from a structured list (`pathways.json`), including:
+  - Title
+  - Description
+  - Direct link
+- Selected pathway links can now be exported as a downloadable `.txt` file inside the ZIP package alongside documents.
 
-- Title
-- Description
-- Direct link
+## Setup
 
-These may cover areas such as sector-specific CVs, employer project briefs and skills reflection activities.
+### 1. Install Dependencies
 
-Whenever you modify `pathways.json`, rebuild the FAISS index by running:
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Create `.env` file
+
+```env
+OPENAI_API_KEY=sk-...
+AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=...
+```
+
+### 3. Build the Vector Index
+
+This downloads files from Azure Blob Storage and embeds their contents.
+
+```bash
+python vector_build.py
+```
+
+### 4. Build the Pathway Index
+
+Run this whenever `pathways.json` is modified:
 
 ```bash
 python build_pathway_index.py
 ```
 
-This will regenerate the `pathways_index` folder used at runtime.
+## AI Persona
+
+The assistant follows a professional persona tailored to the UK Higher Education context:
+
+> "You are the Greenwich Employability Embedding Assistant, an employability adviser for the Employability & Apprenticeship Directorate at the University of Greenwich (UK). You support academic staff (lecturers, module leaders, tutors) in embedding employability skills and resources into the curriculum. You write in clear, concise British English, maintaining a professional tone."
 
 ## How It Works
 
-1. The user enters the following information:
-   - Subject Area
-   - Academic Level (Foundation, Undergraduate, or Postgraduate)
-   - Module Title
-   - Additional Notes
-
-2. This input is sent to the OpenAI GPT model, along with the predefined persona.
-
-3. The model generates:
-   - Written guidance appropriate to the context
-   - A list of matching downloadable documents
-   - A list of relevant pathways
-
-These are presented in three sections on the web page.
+1. Lecturer enters:
+   - Subject area
+   - Academic level (Foundation, Undergraduate, or Postgraduate)
+   - Module title
+   - Additional notes or context
+2. Assistant responds with:
+   - Custom-written guidance from the GPT model
+   - Downloadable, matched documents (with summaries)
+   - Relevant employability pathways (optional `.txt` export)
 
 ## Technologies Used
 
-- Python (Flask) – for backend API
-- HTML, CSS, JavaScript – for frontend interface
-- OpenAI GPT API – for language generation
-- Hosted on Replit
-- Resources stored locally in `static/`
+- **Backend:** Python, Flask
+- **Frontend:** HTML, JavaScript, Bootstrap
+- **AI:** OpenAI GPT-4 (via API), FAISS, LangChain
+- **Storage:** Azure Blob Storage
+- **Deployment:** Replit
+- **Search:** Semantic similarity using OpenAI Embeddings
 
 ## Notes
 
-- Lecturers do not upload materials.
-- Resource updates are managed by Careers and Employability staff.
-- The interface avoids technical explanations and presents information in a clear, academic-friendly format.
+- Academic staff do not upload resources themselves.
+- File uploads and updates are centrally managed by the Employability Team.
+- The interface avoids technical language and remains intuitive for non-technical users.
 
 ## Planned Enhancements
 
-- Integration with OneDrive or SharePoint for dynamic file management
-- Admin dashboard for resource uploads
-- Streamlit-based version with filters and analytics
-- Embedding-based semantic search for more accurate recommendations
-- Login authentication for staff-only access
+- Admin dashboard for authenticated resource uploads
+- Integration with OneDrive or SharePoint for dynamic storage
+- Secure login for staff
+- Moodle-compatible export formatting
+- Analytics and usage dashboard
 
 ## Author
 
-This prototype was developed by Ruvel AI Dev in collaboration with the University of Greenwich Careers and Employability Service, to improve the embedding of employability across the curriculum. 
-
+This assistant was developed by **Ruvel AI Dev** in collaboration with the **University of Greenwich Careers and Employability Service**, to enhance the practical integration of employability within the curriculum across all subject areas.
 
