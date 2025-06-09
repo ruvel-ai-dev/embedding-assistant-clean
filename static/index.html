@@ -86,19 +86,59 @@
           const h = document.createElement("h5");
           h.innerText = "Downloadable Documents";
           dWrap.appendChild(h);
+
+          const list = document.createElement("div");
+
           data.downloads.forEach(file => {
+            const item = document.createElement("div");
+
+            const check = document.createElement("input");
+            check.type = "checkbox";
+            check.value = file.name;
+            check.className = "download-check me-2";
+
             const link = document.createElement("a");
             link.href = file.url;
             link.innerText = "📄 " + file.name;
             link.target = "_blank";
-            dWrap.appendChild(link);
+
+            item.appendChild(check);
+            item.appendChild(link);
+
             if (file.summary) {
               const summary = document.createElement("div");
               summary.className = "summary";
               summary.innerText = file.summary;
-              dWrap.appendChild(summary);
+              item.appendChild(summary);
             }
+
+            list.appendChild(item);
           });
+
+          dWrap.appendChild(list);
+
+          const btn = document.createElement("button");
+          btn.innerText = "Download Selected";
+          btn.className = "btn btn-secondary mt-2";
+          btn.onclick = downloadSelected;
+          dWrap.appendChild(btn);
+
+          const checkWrap = document.createElement("div");
+          checkWrap.className = "form-check mt-2";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.id = "includePathways";
+          checkbox.className = "form-check-input";
+
+          const label = document.createElement("label");
+          label.htmlFor = "includePathways";
+          label.className = "form-check-label ms-1";
+          label.innerText = "Include matched pathways in ZIP";
+
+          checkWrap.appendChild(checkbox);
+          checkWrap.appendChild(label);
+          dWrap.appendChild(checkWrap);
         }
 
         // PATHWAYS
@@ -112,8 +152,10 @@
             link.href = p.url;
             link.innerText = "🔗 " + p.title;
             link.target = "_blank";
+
             const desc = document.createElement("p");
             desc.innerText = p.description;
+
             pWrap.appendChild(link);
             pWrap.appendChild(desc);
           });
@@ -124,10 +166,43 @@
         document.getElementById("error").innerText = "Something went wrong. Please try again later.";
       }
     }
+
+    async function downloadSelected() {
+      const checked = Array.from(document.querySelectorAll('.download-check:checked')).map(cb => cb.value);
+      const includePathways = document.getElementById("includePathways")?.checked;
+      const pathwayElems = document.querySelectorAll("#pathways a");
+      const pathwayItems = [];
+
+      if (includePathways && pathwayElems.length > 0) {
+        for (let i = 0; i < pathwayElems.length; i += 2) {
+          const title = pathwayElems[i].innerText.replace(/^🔗 /, '');
+          const url = pathwayElems[i].href;
+          const desc = pathwayElems[i + 1]?.innerText || "";
+          pathwayItems.push({ title, description: desc, url });
+        }
+      }
+
+      const res = await fetch('/download_zip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: checked, pathways: pathwayItems })
+      });
+
+      if (!res.ok) {
+        alert('Download failed');
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'selected_resources.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    }
   </script>
 </body>
 </html>
-
-
-
-
