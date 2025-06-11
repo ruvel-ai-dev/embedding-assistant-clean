@@ -1,108 +1,140 @@
-# Embedding Assistant – Careers Resource Recommender (Prototype)
+# Embedding Assistant
 
-This is a working prototype of an AI-powered assistant designed to support academic staff at the University of Greenwich in embedding employability into the curriculum. It enables lecturers and tutors to access tailored careers resources and pathways based on their subject area, academic level, and module needs.
+The Embedding Assistant is an AI-powered web application designed to support academic staff at the University of Greenwich in embedding employability skills and resources into their teaching. It enables users to query a custom knowledge base of documents and career development pathways, receiving intelligent suggestions along with direct download links.
 
-## Purpose
+---
 
-Academic staff often face challenges in identifying employability resources that align with their teaching content. This tool simplifies the process by providing intelligent recommendations based on a brief module description.
+## 🌟 Key Features
 
-- Careers and Employability Advisors manage a centralised resource bank (Word documents, PDFs, presentations, and curated pathway links).
-- Lecturers complete a short online form describing their module and context.
-- The assistant returns curated guidance, resource links, and career pathways using AI and semantic search.
+- **Semantic Document Search**: Uses FAISS and OpenAI embeddings to retrieve documents relevant to user queries.
+- **LLM-Generated Summaries**: Provides concise, AI-generated summaries of each document for quick previewing.
+- **Smart General Document Inclusion**: Ensures that general-purpose materials (e.g. CV templates) are always shown, even during subject-specific searches.
+- **Tag Detection**: Automatically detects and stores useful tags like `general` and `main` for use in filtering and inclusion logic.
+- **Pathway Matching**: Recommends career development pathways from Target Connect using semantic similarity.
+- **Download as ZIP**: Users can select any number of documents and pathways to download as a single `.zip` file.
+- **Higher Education Level Dropdown**: Academic level input now reflects HE levels 4, 5, 6, and 7.
+- **Loading Spinner**: Shows a visual spinner when the assistant is processing.
+- **Traditional Layout**: Simplified, accessible front-end designed for ease of use and clarity.
 
-## Features
+---
 
-### 🔍 Intelligent Semantic Matching
+## 🏗 Project Structure
 
-- Uses FAISS vector stores and OpenAI embeddings to match user input with both documents and pathways based on semantic similarity, not just keywords.
-
-### 📄 Downloadable Documents
-
-- Relevant PDF, Word, and PowerPoint files are dynamically retrieved from Azure Blob Storage.
-- Users can select individual or multiple documents to download as a single ZIP file for offline use or Moodle upload.
-- Each document includes a GPT-generated summary for easier previewing.
-
-### 🔗 Pathway Recommendations (Now Exportable)
-
-- The assistant suggests semantically relevant employability pathways from a structured list (`pathways.json`), including:
-  - Title
-  - Description
-  - Direct link
-- Selected pathway links can now be exported as a downloadable `.txt` file inside the ZIP package alongside documents.
-
-## Setup
-
-### 1. Install Dependencies
-
-```bash
-pip install -r requirements.txt
+```
+.
+├── main.py                 # Flask API backend, integrates OpenAI + FAISS
+├── vector_build.py        # Indexes documents, adds metadata and tags
+├── pathways.json          # Pathway entries with title, description, and URL
+├── build_pathway_index.py # Builds FAISS index for pathway matching
+├── static/
+│   └── index.html         # Front-end HTML interface
+├── faiss_index/           # Vector store for documents
+├── pathways_index/        # Vector store for pathways
+├── resources/             # Folder for uploaded documents (via Azure Blob)
+├── requirements.txt
+└── README.md
 ```
 
-### 2. Create `.env` file
+---
 
-```env
-OPENAI_API_KEY=sk-...
-AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=...
-```
+## 🔍 How Document Search Works
 
-### 3. Build the Vector Index
+1. **User Query**: Lecturers submit a structured query (Subject, Level, Module, Notes).
+2. **Semantic Retrieval**: The app uses LangChain's FAISS-based retrieval to return top matches.
+3. **General Files Merged**: General or main-tagged documents (e.g. CV templates) are always included.
+4. **Summaries Displayed**: Short summaries are shown alongside document download links.
+5. **Pathway Links**: Career-related resources from Target Connect are displayed and optionally bundled.
 
-This downloads files from Azure Blob Storage and embeds their contents.
+---
 
-```bash
-python vector_build.py
-```
+## 🏷 Tagging Logic
 
-### 4. Build the Pathway Index
+Documents are automatically tagged in `vector_build.py` based on filename and LLM summary content. Files are tagged `general` if they contain terms such as:
 
-Run this whenever `pathways.json` is modified:
+- `cv`, `cover`, `template`, `checklist`, `main`, `general`
 
-```bash
-python build_pathway_index.py
-```
+This ensures that broadly useful files are always returned alongside subject-specific results.
 
-## AI Persona
+---
 
-The assistant follows a professional persona tailored to the UK Higher Education context:
+## 💾 Downloading Files
 
-> "You are the Greenwich Employability Embedding Assistant, an employability adviser for the Employability & Apprenticeship Directorate at the University of Greenwich (UK). You support academic staff (lecturers, module leaders, tutors) in embedding employability skills and resources into the curriculum. You write in clear, concise British English, maintaining a professional tone."
+Users can:
+- Tick checkboxes next to documents
+- Optionally include matched career pathways
+- Download everything as one `.zip` file via the "Download Selected" button
 
-## How It Works
+---
 
-1. Lecturer enters:
-   - Subject area
-   - Academic level (Foundation, Undergraduate, or Postgraduate)
-   - Module title
-   - Additional notes or context
-2. Assistant responds with:
-   - Custom-written guidance from the GPT model
-   - Downloadable, matched documents (with summaries)
-   - Relevant employability pathways (optional `.txt` export)
+## 📦 Deployment Environment
 
-## Technologies Used
+### Development
+- Developed and tested using Replit and local Python environments
+- Uses Flask, LangChain, OpenAI, FAISS, and Azure Blob Storage
 
-- **Backend:** Python, Flask
-- **Frontend:** HTML, JavaScript, Bootstrap
-- **AI:** OpenAI GPT-4 (via API), FAISS, LangChain
-- **Storage:** Azure Blob Storage
-- **Deployment:** Replit
-- **Search:** Semantic similarity using OpenAI Embeddings
+### Production
+- Deployed via GitHub → Azure App Service (Python-based Web App)
+- Environment variables securely managed via:
+  - `.env` file locally or on Replit
+  - Azure Application Settings for deployment
 
-## Notes
+### Required Environment Variables
 
-- Academic staff do not upload resources themselves.
-- File uploads and updates are centrally managed by the Employability Team.
-- The interface avoids technical language and remains intuitive for non-technical users.
+| Variable                     | Description                        |
+|-----------------------------|------------------------------------|
+| `OPENAI_API_KEY`            | Your OpenAI key                    |
+| `AZURE_STORAGE_CONNECTION_STRING` | Azure Blob connection string  |
 
-## Planned Enhancements
+---
 
-- Admin dashboard for authenticated resource uploads
-- Integration with OneDrive or SharePoint for dynamic storage
-- Secure login for staff
-- Moodle-compatible export formatting
-- Analytics and usage dashboard
+## 📄 How to Add New Files
 
-## Author
+1. Upload files to the Azure Blob Storage container (`resources`).
+2. Run `vector_build.py` to regenerate the FAISS index with summaries and tags.
+3. Redeploy (if needed) to reflect updates in production.
 
-This assistant was developed by **Ruvel AI Dev** in collaboration with the **University of Greenwich Careers and Employability Service**, to enhance the practical integration of employability within the curriculum across all subject areas.
+---
 
+## 🖼 Front-End Notes
+
+The `index.html` page includes:
+- Structured form inputs (Subject, Level, Module, Notes)
+- Dropdown menu using HE levels (4–7)
+- Spinner while loading results
+- AI summary displayed at the **bottom**, following:
+  - Matched document links
+  - Pathway recommendations
+  - Download ZIP feature
+
+The front end is kept intentionally clean and accessible, without unnecessary animations or heavy design.
+
+---
+
+## 📚 Example Use Case
+
+A lecturer teaching a Level 5 module on Environmental Engineering could:
+
+- Enter "Engineering" as the subject
+- Select "Level 5"
+- Type "CV lesson using sustainable design context"
+- Receive matched CV templates, engineering-specific examples, and relevant pathways
+- Download a ZIP package with selected items for inclusion in a Moodle or Teams session
+
+---
+
+## 🔐 Coming Soon
+
+- Microsoft login for secure access restricted to `@gre.ac.uk` emails
+- Auto-update vector index when files are uploaded
+- Filtered retrievers using tags to prioritise document types
+
+---
+
+## 🤝 License & Acknowledgements
+
+This project is being developed to assist the University of Greenwich in delivering targeted, employability-enhancing resources. Built using:
+
+- [OpenAI](https://openai.com/)
+- [LangChain](https://www.langchain.com/)
+- [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/)
+- [FAISS](https://github.com/facebookresearch/faiss)

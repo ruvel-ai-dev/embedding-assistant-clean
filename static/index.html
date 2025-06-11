@@ -5,20 +5,12 @@
   <title>Embedding Assistant</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <style>
-    body { max-width: 820px; margin: 40px auto; font-family: Arial, sans-serif; }
-    #response { white-space: pre-wrap; margin-top: 25px; font-weight: 500; }
+    body { max-width: 840px; margin: 40px auto; font-family: Arial, sans-serif; }
+    #response, #downloads, #pathways, #summary { white-space: pre-wrap; margin-top: 25px; font-weight: 500; }
     #error { color: red; margin-top: 15px; }
-    .downloads a, .pathways a {
-      display: block;
-      margin: 4px 0;
-      text-decoration: none;
-    }
-    .summary {
-      font-size: 0.9rem;
-      margin-bottom: 12px;
-      padding-left: 10px;
-      color: #555;
-    }
+    .downloads a, .pathways a { display: block; margin: 4px 0; text-decoration: none; }
+    .summary { font-size: 0.9rem; margin-bottom: 12px; padding-left: 10px; color: #555; }
+    #spinner { display: none; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -30,9 +22,10 @@
   <label class="form-label mt-3" for="level">Academic Level:</label>
   <select class="form-select" id="level">
     <option value="">Select Level</option>
-    <option value="Foundation">Foundation</option>
-    <option value="Undergraduate">Undergraduate</option>
-    <option value="Postgraduate">Postgraduate</option>
+    <option value="4">Level 4 (First year)</option>
+    <option value="5">Level 5 (Second year)</option>
+    <option value="6">Level 6 (Final year)</option>
+    <option value="7">Level 7 (Master’s)</option>
   </select>
 
   <label class="form-label mt-3" for="module">Module Title:</label>
@@ -43,10 +36,16 @@
 
   <button class="btn btn-primary mt-3" onclick="askAssistant()">Ask the Assistant</button>
 
+  <div id="spinner" class="text-center">
+    <div class="spinner-border text-primary mt-3" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
   <div id="error"></div>
-  <div id="response" class="mt-4"></div>
   <div id="downloads" class="mt-4"></div>
   <div id="pathways" class="mt-4"></div>
+  <div id="response" class="mt-4"></div>
 
   <script>
     async function askAssistant() {
@@ -54,6 +53,7 @@
       document.getElementById("response").innerText = "";
       document.getElementById("downloads").innerHTML = "";
       document.getElementById("pathways").innerHTML = "";
+      document.getElementById("spinner").style.display = "block";
 
       const subject = document.getElementById("subject").value;
       const level   = document.getElementById("level").value;
@@ -73,22 +73,18 @@
           body: JSON.stringify({ message: prompt })
         });
 
-        if (!res.ok) {
-          throw new Error(`Server error: ${res.status}`);
-        }
-
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const data = await res.json();
-        document.getElementById("response").innerText = data.reply;
+        document.getElementById("spinner").style.display = "none";
 
         // DOWNLOADS
-        if (data.downloads && data.downloads.length > 0) {
+        if (data.downloads?.length) {
           const dWrap = document.getElementById("downloads");
           const h = document.createElement("h5");
           h.innerText = "Downloadable Documents";
           dWrap.appendChild(h);
 
           const list = document.createElement("div");
-
           data.downloads.forEach(file => {
             const item = document.createElement("div");
 
@@ -142,11 +138,12 @@
         }
 
         // PATHWAYS
-        if (data.pathways && data.pathways.length > 0) {
+        if (data.pathways?.length) {
           const pWrap = document.getElementById("pathways");
           const h = document.createElement("h5");
           h.innerText = "Recommended Pathways";
           pWrap.appendChild(h);
+
           data.pathways.forEach(p => {
             const link = document.createElement("a");
             link.href = p.url;
@@ -161,7 +158,20 @@
           });
         }
 
+        // AI SUMMARY LAST
+        if (data.reply) {
+          const rWrap = document.getElementById("response");
+          const h = document.createElement("h5");
+          h.innerText = "AI Summary";
+          rWrap.appendChild(h);
+
+          const para = document.createElement("p");
+          para.innerText = data.reply;
+          rWrap.appendChild(para);
+        }
+
       } catch (err) {
+        document.getElementById("spinner").style.display = "none";
         console.error("❌ Error:", err);
         document.getElementById("error").innerText = "Something went wrong. Please try again later.";
       }
