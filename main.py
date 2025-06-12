@@ -52,7 +52,7 @@ try:
                                     OpenAIEmbeddings(),
                                     allow_dangerous_deserialization=True)
     QA_CHAIN = RetrievalQA.from_chain_type(
-        llm=ChatOpenAI(model="gpt-4-1106-preview"),
+        llm=ChatOpenAI(model="gpt-3.5-turbo"),  # 🟢 Downgraded to save cost
         retriever=VECTOR_INDEX.as_retriever())
     print("✅ FAISS document index loaded")
 except Exception as e:
@@ -90,19 +90,16 @@ def ask_gpt():
         answer = QA_CHAIN.run(user_message)
         file_links = get_links_with_summaries(user_message)
     else:
-        gpt_resp = client.chat.completions.create(model="gpt-4-1106-preview",
-                                                  messages=[{
-                                                      "role":
-                                                      "system",
-                                                      "content":
-                                                      SYSTEM_PERSONA
-                                                  }, {
-                                                      "role":
-                                                      "user",
-                                                      "content":
-                                                      user_message
-                                                  }],
-                                                  max_tokens=500)
+        gpt_resp = client.chat.completions.create(
+            model="gpt-3.5-turbo",  # 🟢 Also changed here
+            messages=[{
+                "role": "system",
+                "content": SYSTEM_PERSONA
+            }, {
+                "role": "user",
+                "content": user_message
+            }],
+            max_tokens=500)
         answer = gpt_resp.choices[0].message.content
         file_links = []
 

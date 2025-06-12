@@ -68,7 +68,7 @@ def is_general_purpose(summary, tags, filename):
 
 
 def generate_summary_and_tags(text, filename):
-    llm = ChatOpenAI(temperature=0, model="gpt-4")
+    llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")  # 🔁 Updated model
     prompt = (
         f"Summarise the following document in 2–3 sentences. Then suggest up to 3 topical tags. "
         f"Document name: {filename}\n\n"
@@ -115,8 +115,9 @@ def main():
             text = read_file(content, filename)
             summary, tags = generate_summary_and_tags(text, filename)
 
-            splitter = RecursiveCharacterTextSplitter(chunk_size=1000,
-                                                      chunk_overlap=100)
+            splitter = RecursiveCharacterTextSplitter(
+                chunk_size=500,  # 🔁 Reduced from 1000
+                chunk_overlap=100)
             chunks = splitter.split_text(text)
 
             for chunk in chunks:
