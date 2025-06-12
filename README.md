@@ -31,6 +31,7 @@ The Embedding Assistant is an AI-powered web application designed to support aca
 ├── faiss_index/           # Vector store for documents
 ├── pathways_index/        # Vector store for pathways
 ├── resources/             # Folder for uploaded documents (via Azure Blob)
+├── file_hashes.json       # Tracks document processing hashes
 ├── requirements.txt
 └── README.md
 ```
@@ -51,7 +52,7 @@ The Embedding Assistant is an AI-powered web application designed to support aca
 
 Documents are automatically tagged in `vector_build.py` based on filename and LLM summary content. Files are tagged `general` if they contain terms such as:
 
-- `cv`, `cover`, `template`, `checklist`, `main`, `general`
+- `main`, `general`
 
 This ensures that broadly useful files are always returned alongside subject-specific results.
 
