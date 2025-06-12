@@ -56,15 +56,9 @@
       document.getElementById("spinner").style.display = "block";
 
       const subject = document.getElementById("subject").value;
-      const level   = document.getElementById("level").value;
-      const module  = document.getElementById("module").value;
       const notes   = document.getElementById("notes").value;
 
-      const prompt =
-        `Subject Area: ${subject}\n` +
-        `Academic Level: ${level}\n` +
-        `Module Title: ${module}\n` +
-        `Additional Notes: ${notes}`;
+      const prompt = `${subject} ${notes}`.trim();
 
       try {
         const res = await fetch("/ask", {

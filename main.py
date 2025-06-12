@@ -120,7 +120,7 @@ def get_links_with_summaries(query):
     seen = set()
 
     try:
-        docs = VECTOR_INDEX.similarity_search(query, k=6)
+        docs = VECTOR_INDEX.similarity_search(query, k=15)
 
         # Always add 'general'/'main' tagged docs even if not in top 6
         all_docs = VECTOR_INDEX.similarity_search("", k=50)
