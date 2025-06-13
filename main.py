@@ -4,6 +4,7 @@ import tempfile
 import zipfile
 from io import BytesIO
 from flask import Flask, request, jsonify, send_from_directory, send_file
+from concurrent.futures import ThreadPoolExecutor
 from openai import OpenAI
 from dotenv import load_dotenv
 from azure.storage.blob import BlobServiceClient
@@ -18,6 +19,7 @@ load_dotenv()
 
 app = Flask(__name__, static_folder="static")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+MAX_DOWNLOAD_WORKERS = int(os.getenv("DOWNLOAD_WORKERS", "3"))
 
 # ── Azure Blob Storage Settings ──
 AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
@@ -177,12 +179,14 @@ def download_zip():
         container = blob_service.get_container_client(AZURE_CONTAINER_NAME)
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            for fname in files:
+            def download_one(fname):
                 path = os.path.join(tmpdir, fname)
+                data = container.get_blob_client(fname).download_blob().readall()
                 with open(path, "wb") as f:
-                    f.write(
-                        container.get_blob_client(
-                            fname).download_blob().readall())
+                    f.write(data)
+
+            with ThreadPoolExecutor(max_workers=MAX_DOWNLOAD_WORKERS) as executor:
+                list(executor.map(download_one, files))
 
             zip_buffer = BytesIO()
             with zipfile.ZipFile(zip_buffer, "w") as zipf:
