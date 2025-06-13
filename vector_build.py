@@ -4,6 +4,7 @@ import io
 import hashlib
 import json
 from azure.storage.blob import BlobServiceClient
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from docx import Document as DocxDocument
 from pptx import Presentation
 from PyPDF2 import PdfReader
@@ -19,6 +20,7 @@ AZURE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 AZURE_CONTAINER_NAME = "resources"
 INDEX_FILE = "faiss_index"
 HASH_RECORD_FILE = "hashes.json"
+MAX_WORKERS = int(os.getenv("CONCURRENT_WORKERS", "3"))
 
 # Load existing hash records if present
 if os.path.exists(HASH_RECORD_FILE):
@@ -89,6 +91,45 @@ def generate_summary_and_tags(text, filename):
     return summary, list(set(tags))
 
 
+def process_blob(blob, container_client):
+    filename = blob.name
+    if not filename.endswith((".pdf", ".docx", ".pptx", ".txt")):
+        return None
+
+    blob_client = container_client.get_blob_client(filename)
+    content = get_blob_content(blob_client)
+    file_hash = calculate_file_hash(content)
+
+    if existing_hashes.get(filename) == file_hash:
+        print(f"✅ Skipped (no changes): {filename}")
+        return None
+
+    try:
+        text = read_file(content, filename)
+        summary, tags = generate_summary_and_tags(text, filename)
+
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,
+            chunk_overlap=100)
+        chunks = splitter.split_text(text)
+
+        docs = [
+            Document(page_content=chunk,
+                     metadata={
+                         "source": filename,
+                         "summary": summary,
+                         "tags": tags,
+                     })
+            for chunk in chunks
+        ]
+
+        print(f"✅ Processed: {filename}")
+        return filename, file_hash, docs
+    except Exception as e:
+        print(f"❌ Failed to process {filename}: {e}")
+        return None
+
+
 def main():
     blob_service_client = BlobServiceClient.from_connection_string(
         AZURE_CONNECTION_STRING)
@@ -98,41 +139,17 @@ def main():
     docs_with_metadata = []
     new_hashes = {}
 
-    for blob in container_client.list_blobs():
-        filename = blob.name
-        if not filename.endswith((".pdf", ".docx", ".pptx", ".txt")):
-            continue
+    blobs = list(container_client.list_blobs())
 
-        blob_client = container_client.get_blob_client(blob.name)
-        content = get_blob_content(blob_client)
-        file_hash = calculate_file_hash(content)
-
-        if existing_hashes.get(filename) == file_hash:
-            print(f"✅ Skipped (no changes): {filename}")
-            continue
-
-        try:
-            text = read_file(content, filename)
-            summary, tags = generate_summary_and_tags(text, filename)
-
-            splitter = RecursiveCharacterTextSplitter(
-                chunk_size=500,  # 🔁 Reduced from 1000
-                chunk_overlap=100)
-            chunks = splitter.split_text(text)
-
-            for chunk in chunks:
-                docs_with_metadata.append(
-                    Document(page_content=chunk,
-                             metadata={
-                                 "source": filename,
-                                 "summary": summary,
-                                 "tags": tags
-                             }))
-
-            new_hashes[filename] = file_hash
-            print(f"✅ Processed: {filename}")
-        except Exception as e:
-            print(f"❌ Failed to process {filename}: {e}")
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [executor.submit(process_blob, blob, container_client)
+                   for blob in blobs]
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                filename, file_hash, docs = result
+                docs_with_metadata.extend(docs)
+                new_hashes[filename] = file_hash
 
     # ✅ SAFEGUARD: Only build FAISS if we have valid documents
     if not docs_with_metadata:
