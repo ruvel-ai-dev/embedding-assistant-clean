@@ -112,24 +112,29 @@ def ask_gpt():
     })
 
 
-def get_links_with_summaries(query):
+def get_links_with_summaries(query, top_k: int = 6):
+    """Return document links sorted by FAISS score, always including general docs."""
     results = []
     seen = set()
 
     try:
-        docs = VECTOR_INDEX.similarity_search(query, k=15)
+        # Request scores from FAISS for query-specific results
+        ranked_docs = VECTOR_INDEX.similarity_search_with_score(query, k=15)
 
-        # Always add 'general'/'main' tagged docs even if not in top 6
-        all_docs = VECTOR_INDEX.similarity_search("", k=50)
+        # Fetch general docs without filtering by query similarity
+        general_pool = VECTOR_INDEX.similarity_search("", k=50)
         general_docs = [
-            doc for doc in all_docs
-            if 'general' in doc.metadata.get("tags", [])
-            or 'main' in doc.metadata.get("tags", [])
+            (doc, float("inf"))
+            for doc in general_pool
+            if "general" in doc.metadata.get("tags", [])
+            or "main" in doc.metadata.get("tags", [])
         ]
 
-        combined_docs = docs + general_docs
+        # Combine and sort by score (general docs have score = inf)
+        combined = ranked_docs + general_docs
+        combined.sort(key=lambda x: x[1])
 
-        for doc in combined_docs:
+        for doc, score in combined:
             fname = os.path.basename(doc.metadata.get("source", ""))
             summary = doc.metadata.get("summary", "")
             if fname and fname not in seen:
@@ -137,13 +142,30 @@ def get_links_with_summaries(query):
                 results.append({
                     "name": fname,
                     "url": f"{AZURE_BLOB_BASE_URL}{fname}",
-                    "summary": summary
+                    "summary": summary,
+                    "_score": score,
+                    "_is_general": "general" in doc.metadata.get("tags", [])
+                    or "main" in doc.metadata.get("tags", [])
                 })
+
+        # Trim to top_k then append any missing general docs
+        top_results = results[:top_k]
+        included = {r["name"] for r in top_results}
+        for item in results[top_k:]:
+            if item["_is_general"] and item["name"] not in included:
+                top_results.append(item)
+                included.add(item["name"])
+
+        # Remove helper keys
+        for item in top_results:
+            item.pop("_score", None)
+            item.pop("_is_general", None)
+
+        return top_results
 
     except Exception as e:
         print(f"⚠️ Failed to fetch summary metadata: {e}")
-
-    return results
+        return []
 
 
 def match_pathways(user_input):
