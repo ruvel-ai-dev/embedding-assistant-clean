@@ -132,9 +132,24 @@ def get_links_with_summaries(query, top_k: int = 6):
             or "main" in doc.metadata.get("tags", [])
         ]
 
-        # Combine and sort by score (general docs have score = inf)
+        # Combine all docs then apply heuristic re-ranking
         combined = ranked_docs + general_docs
-        combined.sort(key=lambda x: x[1])
+
+        def _heuristic(doc_score):
+            """Return adjusted score based on simple keyword heuristics."""
+            doc, score = doc_score
+            adj = score
+            summary = doc.metadata.get("summary", "").lower()
+            name = os.path.basename(doc.metadata.get("source", "")).lower()
+            q = query.lower()
+            if q:
+                if q in summary or q in name:
+                    adj -= 0.2  # boost if query appears
+            if "general" in doc.metadata.get("tags", []) or "main" in doc.metadata.get("tags", []):
+                adj += 1.0  # demote general docs slightly
+            return adj
+
+        combined.sort(key=_heuristic)
 
         for doc, score in combined:
             fname = os.path.basename(doc.metadata.get("source", ""))
