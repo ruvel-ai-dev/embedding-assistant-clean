@@ -123,11 +123,11 @@ def get_links_with_summaries(query, top_k: int = 6):
         # Request scores from FAISS for query-specific results
         ranked_docs = VECTOR_INDEX.similarity_search_with_score(query, k=15)
 
-        # Fetch general docs without filtering by query similarity
-        general_pool = VECTOR_INDEX.similarity_search("", k=50)
+        # Fetch general docs by filtering metadata tags
+        doc_dict = getattr(VECTOR_INDEX.docstore, "_dict", {})
         general_docs = [
             (doc, float("inf"))
-            for doc in general_pool
+            for doc in doc_dict.values()
             if "general" in doc.metadata.get("tags", [])
             or "main" in doc.metadata.get("tags", [])
         ]

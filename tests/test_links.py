@@ -90,15 +90,17 @@ class DummyIndex:
         self._query_docs = [
             (DummyDoc(n, f'sum-{n}', t), s) for n, s, t in query_docs
         ]
-        self._general_docs = [DummyDoc(n, f'sum-{n}', ['general']) for n in general_docs]
+        self.docstore = type('ds', (), {'_dict': {}})()
+        i = 0
+        for doc, _ in self._query_docs:
+            self.docstore._dict[f'q{i}'] = doc
+            i += 1
+        for name in general_docs:
+            self.docstore._dict[f'g{i}'] = DummyDoc(name, f'sum-{name}', ['general'])
+            i += 1
 
     def similarity_search_with_score(self, query, k=15):
         return self._query_docs[:k]
-
-    def similarity_search(self, query, k=50):
-        if query == "":
-            return self._general_docs[:k]
-        return []
 
 
 def test_general_docs_added_when_missing():
