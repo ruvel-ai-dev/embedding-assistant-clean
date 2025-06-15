@@ -11,7 +11,7 @@ The Embedding Assistant is an AI-powered web application designed to support aca
 - **Smart General Document Inclusion**: Ensures that general-purpose materials (e.g. CV templates) are always shown, even during subject-specific searches.
 - **Tag Detection**: Automatically detects and stores useful tags like `general` and `main` for use in filtering and inclusion logic.
 - **Pathway Matching**: Recommends career development pathways from Target Connect using semantic similarity.
-- **Download as ZIP**: Users can select any number of documents and pathways to download as a single `.zip` file.
+- **Download as ZIP**: Users can select documents and pathways to download as a single `.zip`. When pathways are included, the archive also contains a `pathways.txt` summary file.
 - **Higher Education Level Dropdown**: Academic level input now reflects HE levels 4, 5, 6, and 7.
 - **Loading Spinner**: Shows a visual spinner when the assistant is processing.
 - **Traditional Layout**: Simplified, accessible front-end designed for ease of use and clarity.
@@ -63,7 +63,7 @@ This ensures that broadly useful files are always returned alongside subject-spe
 Users can:
 - Tick checkboxes next to documents
 - Optionally include matched career pathways
-- Download everything as one `.zip` file via the "Download Selected" button
+- Download everything as one `.zip` via the "Download Selected" button. If pathways are included, a `pathways.txt` file listing them is added to the archive.
 
 ---
 

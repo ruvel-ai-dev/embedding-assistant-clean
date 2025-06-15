@@ -192,6 +192,7 @@ def match_pathways(user_input):
 def download_zip():
     data = request.get_json()
     files = data.get("files", [])
+    pathways = data.get("pathways", [])
     if not isinstance(files, list) or not files:
         return jsonify({"error": "No files provided"}), 400
 
@@ -210,10 +211,20 @@ def download_zip():
             with ThreadPoolExecutor(max_workers=MAX_DOWNLOAD_WORKERS) as executor:
                 list(executor.map(download_one, files))
 
+            if pathways:
+                pfile = os.path.join(tmpdir, "pathways.txt")
+                with open(pfile, "w") as pf:
+                    for item in pathways:
+                        pf.write(f"Title: {item.get('title', '')}\n")
+                        pf.write(f"Description: {item.get('description', '')}\n")
+                        pf.write(f"URL: {item.get('url', '')}\n\n")
+
             zip_buffer = BytesIO()
             with zipfile.ZipFile(zip_buffer, "w") as zipf:
                 for fname in files:
                     zipf.write(os.path.join(tmpdir, fname), arcname=fname)
+                if pathways:
+                    zipf.write(pfile, arcname="pathways.txt")
 
             zip_buffer.seek(0)
             return send_file(zip_buffer,

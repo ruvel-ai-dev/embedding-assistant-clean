@@ -17,7 +17,11 @@ def test_get_links_with_summaries_includes_general(monkeypatch):
     all_docs = query_docs + [DummyDoc({'source': 'general.txt', 'summary': 'gen sum', 'tags': ['general']})]
 
     class DummyIndex:
-        def similarity_search(self, query, k=15):
+        def similarity_search_with_score(self, query, k=15):
+            docs = query_docs if query else all_docs
+            return [(d, 0.1) for d in docs]
+
+        def similarity_search(self, query, k=50):
             return all_docs if query == '' else query_docs
 
     monkeypatch.setattr(main, 'VECTOR_INDEX', DummyIndex())
