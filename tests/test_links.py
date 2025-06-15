@@ -129,3 +129,15 @@ def test_sorted_by_score():
     assert names[-1] == 'gen.pdf'
 
 
+def test_keyword_boost_reranks():
+    main = import_main()
+    main.AZURE_BLOB_BASE_URL = "http://blob/"
+    main.VECTOR_INDEX = DummyIndex(
+        query_docs=[('catguide.pdf', 0.2, []), ('other.pdf', 0.1, [])],
+        general_docs=[]
+    )
+    res = main.get_links_with_summaries('cat', top_k=2)
+    names = [r['name'] for r in res]
+    assert names[0] == 'catguide.pdf'
+
+
