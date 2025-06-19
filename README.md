@@ -36,6 +36,7 @@ The Embedding Assistant is an AI-powered web application designed to support aca
 └── README.md
 ```
 
+
 ---
 
 ## 🔍 How Document Search Works
@@ -81,9 +82,9 @@ Users can:
 
 ### Required Environment Variables
 
-| Variable                     | Description                        |
-|-----------------------------|------------------------------------|
-| `OPENAI_API_KEY`            | Your OpenAI key                    |
+| Variable                           | Description                   |
+|------------------------------------|-------------------------------|
+| `OPENAI_API_KEY`                   | Your OpenAI key               |
 | `AZURE_STORAGE_CONNECTION_STRING` | Azure Blob connection string  |
 
 ---
@@ -122,39 +123,33 @@ A lecturer teaching a Level 5 module on Environmental Engineering could:
 - Download a ZIP package with selected items for inclusion in a Moodle or Teams session
 
 ---
+
 ## 📸 Project Screenshots
 
 A visual walkthrough of the Embedding Assistant in action:
 
-### 🏁 Start Page – Clean Form Interface
-
-The homepage offers a clear, structured form where academic staff can enter subject, academic level, module title, and notes.
-
-![Homepage](screenshots/homepage.jpg)
-
----
-
-### 🧠 Query Example – Law + Career Development
-
-An example user input: a Level 5 Law lecturer seeking CV-related resources.
-
-![Query Form](screenshots/query-form.jpg)
-
----
-
-### 📄 Results – Matched Downloads, Pathways & AI Summary
-
-Returned results include matched documents with summaries, relevant pathway links, and an intelligent AI-generated teaching summary.
-
-![Results Display](screenshots/results-display.jpg)
-
----
-
-### 📦 ZIP Download Option
-
-Users can select files and optionally include matched pathways in a single downloadable `.zip` archive.
-
-![ZIP Download](screenshots/zip-download.jpg)
+<table>
+  <tr>
+    <td align="center">
+      <strong>Start Page – Clean Form Interface</strong><br>
+      <img src="screenshots/homepage.jpg" alt="Homepage" width="350">
+    </td>
+    <td align="center">
+      <strong>Query Example – Law + Career Development</strong><br>
+      <img src="screenshots/query-form.jpg" alt="Query Form" width="350">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Results – Downloads, Pathways & Summary</strong><br>
+      <img src="screenshots/results-display.jpg" alt="Results Display" width="350">
+    </td>
+    <td align="center">
+      <strong>ZIP Download Option</strong><br>
+      <img src="screenshots/zip-download.jpg" alt="ZIP Download" width="350">
+    </td>
+  </tr>
+</table>
 
 ---
 
