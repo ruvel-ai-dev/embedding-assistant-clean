@@ -122,6 +122,41 @@ A lecturer teaching a Level 5 module on Environmental Engineering could:
 - Download a ZIP package with selected items for inclusion in a Moodle or Teams session
 
 ---
+## 📸 Project Screenshots
+
+A visual walkthrough of the Embedding Assistant in action:
+
+### 🏁 Start Page – Clean Form Interface
+
+The homepage offers a clear, structured form where academic staff can enter subject, academic level, module title, and notes.
+
+![Homepage](screenshots/homepage.jpg)
+
+---
+
+### 🧠 Query Example – Law + Career Development
+
+An example user input: a Level 5 Law lecturer seeking CV-related resources.
+
+![Query Form](screenshots/query-form.jpg)
+
+---
+
+### 📄 Results – Matched Downloads, Pathways & AI Summary
+
+Returned results include matched documents with summaries, relevant pathway links, and an intelligent AI-generated teaching summary.
+
+![Results Display](screenshots/results-display.jpg)
+
+---
+
+### 📦 ZIP Download Option
+
+Users can select files and optionally include matched pathways in a single downloadable `.zip` archive.
+
+![ZIP Download](screenshots/zip-download.jpg)
+
+---
 
 ## 🔐 Coming Soon
 
