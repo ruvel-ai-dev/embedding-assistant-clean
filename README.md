@@ -1,6 +1,6 @@
 # Embedding Assistant
 
-The Embedding Assistant is an AI-powered web application designed to support academic staff at the University of Greenwich in embedding employability skills and resources into their teaching. It enables users to query a custom knowledge base of documents and career development pathways, receiving intelligent suggestions along with direct download links.
+The Embedding Assistant is an AI-powered web application designed to support academic staff at University in embedding employability skills and resources into their teaching. It enables users to query a custom knowledge base of documents and career development pathways, receiving intelligent suggestions along with direct download links.
 
 ---
 
@@ -155,7 +155,7 @@ A visual walkthrough of the Embedding Assistant in action:
 
 ## 🔐 Coming Soon
 
-- Microsoft login for secure access restricted to `@gre.ac.uk` emails
+- Microsoft login for secure access restricted to `@universityname.ac.uk` emails
 - Auto-update vector index when files are uploaded
 - Filtered retrievers using tags to prioritise document types
 
@@ -163,7 +163,7 @@ A visual walkthrough of the Embedding Assistant in action:
 
 ## 🤝 License & Acknowledgements
 
-This project is being developed to assist the University of Greenwich in delivering targeted, employability-enhancing resources. Built using:
+This project is being developed to assist University in delivering targeted, employability-enhancing resources. Built using:
 
 - [OpenAI](https://openai.com/)
 - [LangChain](https://www.langchain.com/)
